@@ -490,7 +490,8 @@
     document.body.className = routine;
     document.documentElement.className = routine;
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', routine === 'morning' ? '#6cc3f5' : '#07102e'); // Farbe oben (Himmel)
+    // iOS 26 füllt den Bereich um den Home-Balken mit der Theme-Farbe → Farbe des unteren Randes (Wiese/Nachthügel)
+    if (meta) meta.setAttribute('content', routine === 'morning' ? '#7ccd5b' : '#16204a');
 
     renderKidTheme();
     renderKids();
