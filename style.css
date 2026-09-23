@@ -23,7 +23,7 @@ html.evening { background: #16204a; }
 body {
   font-family: "Chalkboard SE", "Comic Sans MS", "Marker Felt", "Trebuchet MS", sans-serif;
   color: #33334d;
-  background: #7ec8f0;
+  background: transparent; /* Grundfarbe kommt von html bzw. .edge-fill */
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; /* kein Gummiband-Scrollen */
   touch-action: manipulation;
 }
@@ -635,3 +635,11 @@ body.evening .kid-bg-float { opacity: .22; }
   75% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.15); }
 }
+
+/* Einfarbiger Streifen am unteren Rand (Farbe = Hügel der Szene). Reicht über den
+   Bildschirmrand hinaus, damit iOS den Bereich um den Home-Balken passend einfärbt. */
+.edge-fill {
+  position: fixed; left: 0; right: 0; bottom: -100px; height: 106px;
+  background: #7ccd5b; pointer-events: none; transition: background-color .8s ease;
+}
+body.evening .edge-fill { background: #16204a; }

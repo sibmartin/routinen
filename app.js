@@ -490,7 +490,7 @@
     document.body.className = routine;
     document.documentElement.className = routine;
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', routine === 'morning' ? '#7ec8f0' : '#0b1437');
+    if (meta) meta.setAttribute('content', routine === 'morning' ? '#6cc3f5' : '#07102e'); // Farbe oben (Himmel)
 
     renderKidTheme();
     renderKids();
