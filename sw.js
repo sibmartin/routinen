@@ -1,6 +1,6 @@
 /* Service Worker: lädt die App komplett aus dem Cache, damit sie offline läuft.
    Nach Änderungen an den Dateien die Versionsnummer erhöhen. */
-var CACHE = 'routine-app-v3';
+var CACHE = 'routine-app-v5';
 var FILES = [
   './',
   './index.html',
@@ -16,7 +16,10 @@ var FILES = [
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
-    caches.open(CACHE).then(function (cache) { return cache.addAll(FILES); })
+    caches.open(CACHE).then(function (cache) {
+      // 'reload' umgeht den Browser-Cache, damit bei einem Update wirklich die neuen Dateien geladen werden
+      return cache.addAll(FILES.map(function (url) { return new Request(url, { cache: 'reload' }); }));
+    })
       .then(function () { return self.skipWaiting(); })
   );
 });

@@ -16,6 +16,7 @@
   ];
 
   var AVATARS = ['🦊', '🦄', '🐱', '🐶', '🐰', '🐻', '🐼', '🦁', '🐸', '🐯', '🐨', '🐧', '🦋', '🐞', '🌸', '⭐'];
+  var KID_COLORS = ['#ff8a5b', '#a77bff', '#34aadc', '#3cc45a', '#ff5e9a', '#ffb627', '#1fbfae', '#5b6ee1'];
 
   var ROUTINES = {
     morning: { label: 'Morgen', icon: '☀️' },
@@ -368,6 +369,7 @@
     return {
       name: '',
       avatar: kid.avatar,
+      color: kid.color,
       tiles: clone(DEFAULT_TILES),
       done: { morning: {}, evening: {} }
     };
@@ -390,6 +392,7 @@
       if (sk) {
         if (typeof sk.name === 'string') k.name = sk.name.slice(0, MAX_NAME);
         if (sk.avatar) k.avatar = sk.avatar;
+        if (KID_COLORS.indexOf(sk.color) !== -1) k.color = sk.color;
         ['morning', 'evening'].forEach(function (r) {
           if (sk.tiles && sk.tiles[r] && sk.tiles[r].length !== undefined) {
             k.tiles[r] = sk.tiles[r].filter(function (id) { return !!CATALOG_BY_ID[id]; }).slice(0, MAX_TILES);
@@ -485,9 +488,11 @@
   function render() {
     var routine = state.current.routine;
     document.body.className = routine;
+    document.documentElement.className = routine;
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', routine === 'morning' ? '#7ec8f0' : '#0b1437');
 
+    renderKidTheme();
     renderKids();
     var btns = document.querySelectorAll('.routine-btn');
     for (var i = 0; i < btns.length; i++) {
@@ -502,7 +507,7 @@
     KIDS.forEach(function (kid) {
       var b = el('button', 'kid-btn');
       var active = kid.id === state.current.kid;
-      if (active) { b.className += ' active'; b.style.borderColor = kid.color; }
+      if (active) { b.className += ' active'; b.style.backgroundColor = state.kids[kid.id].color; }
       var a = el('span', 'avatar', state.kids[kid.id].avatar);
       b.appendChild(a);
       b.appendChild(el('span', 'name', kidName(kid.id)));
@@ -511,9 +516,69 @@
         state.current.kid = kid.id;
         save();
         render();
+        kidSplash();
       });
       box.appendChild(b);
     });
+  }
+
+  /* --------------------- Erkennungszeichen je Kind --------------------- */
+
+  // Positionen der schwebenden Tierbilder im Hintergrund (in % des Bildschirms)
+  var KID_BG_SPOTS = [
+    { x: 2,  y: 16, s: 90,  r: -12 }, { x: 44, y: 11, s: 60,  r: 6 },   { x: 86, y: 20, s: 74,  r: 10 },
+    { x: 22, y: 36, s: 64,  r: 14 },  { x: 66, y: 34, s: 70,  r: -14 }, { x: 10, y: 58, s: 76,  r: 8 },
+    { x: 48, y: 50, s: 110, r: 0 },   { x: 84, y: 58, s: 96,  r: -8 },  { x: 28, y: 78, s: 82,  r: -6 },
+    { x: 62, y: 80, s: 72,  r: 12 },  { x: 90, y: 86, s: 60,  r: -10 }, { x: 4,  y: 88, s: 58,  r: 10 }
+  ];
+  var lastThemeKey = '';
+
+  function hexToRgba(hex, a) {
+    var n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+
+  /* Farbrahmen und schwebende Tierbilder des aktiven Kindes */
+  function renderKidTheme() {
+    var ks = kidState();
+    var key = state.current.kid + ks.avatar + ks.color;
+    var frame = $('kidFrame');
+    frame.style.boxShadow = 'inset 0 0 0 10px ' + ks.color + ', inset 0 0 90px ' + hexToRgba(ks.color, 0.45);
+    if (key === lastThemeKey) return;
+    var first = lastThemeKey === '';
+    lastThemeKey = key;
+
+    var bg = $('kidBg');
+    bg.innerHTML = '';
+    KID_BG_SPOTS.forEach(function (p, i) {
+      var outer = el('div', 'kid-bg-item' + (first ? '' : ' pop'));
+      outer.style.left = p.x + '%';
+      outer.style.top = p.y + '%';
+      outer.style.fontSize = p.s + 'px';
+      outer.style.animationDelay = first ? '0s' : (i * 0.04) + 's';
+      var inner = el('div', 'kid-bg-float', ks.avatar);
+      setTransform(inner, 'rotate(' + p.r + 'deg)');
+      inner.style.animationDelay = (-i * 0.7) + 's';
+      outer.appendChild(inner);
+      bg.appendChild(outer);
+    });
+  }
+
+  /* Kurze große Begrüßung beim Umschalten des Kindes */
+  var splashTimer;
+  function kidSplash() {
+    var box = $('kidSplash');
+    var ks = kidState();
+    box.innerHTML = '';
+    var av = el('div', 'av', ks.avatar);
+    av.style.backgroundColor = ks.color;
+    box.appendChild(av);
+    box.appendChild(el('div', 'nm', 'Hallo ' + kidName() + '!'));
+    box.className = 'kid-splash';
+    void box.offsetWidth; // Animation neu starten
+    box.className = 'kid-splash show';
+    clearTimeout(splashTimer);
+    splashTimer = setTimeout(function () { box.className = 'kid-splash'; }, 1500);
   }
 
   function renderGrid() {
@@ -671,10 +736,26 @@
     var input = $('nameInput');
     input.value = kidState().name || '';
     input.placeholder = findKid(state.current.kid).defaultName;
+    showVersion();
     renderSettings();
     openModal('settingsModal');
     $('settingsModal').querySelector('.settings-body').scrollTop = 0;
   });
+
+  /* Versionsnummer aus dem Cache-Namen des Service Workers (sw.js: 'routine-app-vX').
+     Zeigt die installierte Version – so sieht man, ob ein Update angekommen ist. */
+  function showVersion() {
+    var box = $('appVersion');
+    if (!window.caches || !caches.keys) { box.textContent = 'Version –'; return; }
+    caches.keys().then(function (keys) {
+      var best = 0;
+      keys.forEach(function (k) {
+        var m = /^routine-app-v(\d+)$/.exec(k);
+        if (m && +m[1] > best) best = +m[1];
+      });
+      box.textContent = 'Version ' + (best || '–');
+    }).catch(function () { box.textContent = 'Version –'; });
+  }
 
   // Name wird beim Tippen gespeichert
   $('nameInput').setAttribute('maxlength', MAX_NAME);
@@ -728,8 +809,25 @@
         save();
         renderSettings();
         renderKids();
+        renderKidTheme();
       });
       ap.appendChild(b);
+    });
+
+    // Farbe
+    var cp = $('colorPicker');
+    cp.innerHTML = '';
+    KID_COLORS.forEach(function (c) {
+      var b = el('button', c === ks.color ? 'active' : '');
+      b.style.backgroundColor = c;
+      b.addEventListener('click', function () {
+        ks.color = c;
+        save();
+        renderSettings();
+        renderKids();
+        renderKidTheme();
+      });
+      cp.appendChild(b);
     });
 
     // Tabs

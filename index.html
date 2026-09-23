@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="morning">
 <head>
   <meta charset="utf-8">
   <title>Meine Routine</title>
@@ -48,6 +48,10 @@
     <div class="owl">🦉</div>
     <div class="zzz">z<span>z</span><span>z</span></div>
   </div>
+
+  <!-- Erkennungszeichen des aktiven Kindes: schwebende Tierbilder + Farbrahmen -->
+  <div class="kid-bg" id="kidBg" aria-hidden="true"></div>
+  <div class="kid-frame" id="kidFrame" aria-hidden="true"></div>
 
   <div class="app">
     <header class="topbar">
@@ -112,6 +116,10 @@
           <h3>Bild</h3>
           <div class="avatars" id="avatarPicker"></div>
         </div>
+        <div class="settings-section">
+          <h3>Farbe</h3>
+          <div class="colors" id="colorPicker"></div>
+        </div>
         <div class="settings-tabs" id="settingsTabs">
           <button class="tab" data-routine="morning">☀️ Morgenroutine</button>
           <button class="tab" data-routine="evening">🌙 Abendroutine</button>
@@ -130,8 +138,12 @@
           <button class="btn btn-grey" id="restoreDefaults">Standard-Kacheln wiederherstellen</button>
         </div>
       </div>
+      <div class="app-version" id="appVersion"></div>
     </div>
   </div>
+
+  <!-- Begrüßung beim Umschalten des Kindes -->
+  <div class="kid-splash" id="kidSplash" aria-hidden="true"></div>
 
   <!-- Belohnungs-Animation -->
   <div class="celebrate" id="celebrate">
