@@ -26,8 +26,10 @@ Ein Service Worker funktioniert nur über **HTTPS**. Die Dateien müssen daher e
 - **Kind wählen:** oben links. Die Namen werden im ⚙️-Menü eingetragen und nur auf dem iPad gespeichert, nicht im Code.
 - **Routine wählen:** ☀️ Morgen / 🌙 Abend. Der Fortschritt bleibt beim Umschalten erhalten.
 - **Kachel antippen:** Sie wird grün, ein „+1“ steigt auf und die Energie-Leiste oben füllt sich. Nochmal antippen macht es rückgängig.
-- **Alle Kacheln erledigt:** Eine zufällige Belohnung erscheint (je 5 für morgens und abends, z. B. Pokal mit 3 Sternen, Combo-Zähler, Münzregen, Sammelkarte zum Aufdecken, Warp-Flug). Sie bleibt stehen, bis das Kind auf **Weiter** oder irgendwo auf den Bildschirm tippt.
-- **↺ Alles zurücksetzen:** gilt nur für das aktuelle Kind und die aktuelle Routine.
+- **Alle Kacheln erledigt:** Eine zufällige Belohnungs-Animation erscheint (je 5 für morgens und abends: Pokal mit 3 Sternen, Feuerwerk, Konfetti-Party, Luftballons, Goldmedaille bzw. abends Sternschnuppen und Nordlicht). Sie bleibt stehen, bis das Kind auf **Weiter** oder irgendwo auf den Bildschirm tippt.
+- **Nur eine Belohnung pro Tag:** Pro Kind und Routine gibt es die Belohnung einmal am Tag. Wer die letzte Kachel ab- und wieder anwählt, sieht nur „Heute schon geschafft“.
+- **Neuer Tag:** Um 3 Uhr nachts werden alle Kacheln automatisch wieder geöffnet.
+- **↺ Alles zurücksetzen:** gilt nur für das aktuelle Kind und die aktuelle Routine. Vorher kommt eine **Elternfreigabe** (Rechenaufgabe wie „7 × 8“ oder „46 + 27“), jedes Mal neu. Das Zurücksetzen gibt auch die Belohnung wieder frei, z. B. wenn ein Kind beim falschen Geschwisterkind abgehakt hat.
 - **⚙️ Zahnrad:** Einstellungen für das aktuelle Kind. Dort lassen sich Name und Bild festlegen sowie Kacheln für morgens und abends hinzufügen, entfernen oder sortieren (max. 12).
 
 ## Änderungen später ausrollen

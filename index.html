@@ -92,6 +92,18 @@
     </div>
   </div>
 
+  <!-- Elternfreigabe: Rechenaufgabe vor "Alles zurücksetzen" -->
+  <div class="modal" id="parentModal">
+    <div class="dialog small parent">
+      <div class="dialog-emoji">🔒</div>
+      <h2>Elternfreigabe</h2>
+      <div class="pg-task" id="pgTask"></div>
+      <div class="pg-input" id="pgInput"></div>
+      <div class="pg-pad" id="pgPad"></div>
+      <div class="dialog-actions"><button class="btn btn-grey" id="pgCancel">Abbrechen</button></div>
+    </div>
+  </div>
+
   <!-- Einstellungen -->
   <div class="modal" id="settingsModal">
     <div class="dialog settings">
@@ -133,6 +145,9 @@
       <div class="app-version" id="appVersion"></div>
     </div>
   </div>
+
+  <!-- Kurzer Hinweis (z. B. "Heute schon geschafft") -->
+  <div class="toast" id="toast" aria-live="polite"></div>
 
   <!-- Begrüßung beim Umschalten des Kindes -->
   <div class="kid-splash" id="kidSplash" aria-hidden="true"></div>

@@ -372,7 +372,8 @@
       avatar: kid.avatar,
       color: kid.color,
       tiles: clone(DEFAULT_TILES),
-      done: { morning: {}, evening: {} }
+      done: { morning: {}, evening: {} },
+      rewarded: { morning: '', evening: '' } // Tag, an dem die Belohnung schon kam
     };
   }
 
@@ -380,7 +381,9 @@
     var saved = null;
     try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { saved = null; }
 
-    var s = { current: { kid: KIDS[0].id, routine: 'morning' }, kids: {} };
+    // Ältere Speicherstände kennen noch keinen Tag → heutigen annehmen, damit nichts verloren geht
+    var s = { current: { kid: KIDS[0].id, routine: 'morning' }, kids: {}, day: dayKey() };
+    if (saved && typeof saved.day === 'string') s.day = saved.day;
     if (saved && typeof saved === 'object') {
       if (saved.current) {
         if (findKid(saved.current.kid)) s.current.kid = saved.current.kid;
@@ -399,6 +402,7 @@
             k.tiles[r] = sk.tiles[r].filter(function (id) { return !!CATALOG_BY_ID[id]; }).slice(0, MAX_TILES);
           }
           if (sk.done && sk.done[r]) k.done[r] = sk.done[r];
+          if (sk.rewarded && typeof sk.rewarded[r] === 'string') k.rewarded[r] = sk.rewarded[r];
         });
       }
       s.kids[kid.id] = k;
@@ -413,6 +417,23 @@
       // z. B. privater Modus in altem Safari – App funktioniert weiter, nur ohne Speichern
       if (window.console) console.warn('Speichern nicht möglich', e);
     }
+  }
+
+  /* Tages-Schlüssel. Der Tag wechselt erst um 3 Uhr nachts, damit eine
+     späte Abendroutine nicht um Mitternacht verschwindet. */
+  function dayKey() {
+    var d = new Date(Date.now() - 3 * 3600 * 1000);
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  }
+
+  /* Neuer Tag → alle Kacheln wieder offen. Gibt true zurück, wenn zurückgesetzt wurde. */
+  function checkNewDay() {
+    var k = dayKey();
+    if (state.day === k) return false;
+    state.day = k;
+    KIDS.forEach(function (kid) { state.kids[kid.id].done = { morning: {}, evening: {} }; });
+    save();
+    return true;
   }
 
   function findKid(id) {
@@ -705,7 +726,15 @@
     updateProgress();
     var after = progress();
     if (after.total > 0 && after.done === after.total && before.done < before.total) {
-      setTimeout(celebrate, 750);
+      // Große Belohnung nur einmal pro Tag und Routine – sonst reicht An-/Abwählen der letzten Kachel
+      var ks = kidState(), r = state.current.routine;
+      if (ks.rewarded[r] === state.day) {
+        setTimeout(function () { toast('✓ Heute schon geschafft! Morgen gibt es die nächste Belohnung.'); }, 400);
+      } else {
+        ks.rewarded[r] = state.day;
+        save();
+        setTimeout(celebrate, 750);
+      }
     }
   }
 
@@ -736,18 +765,96 @@
     setTimeout(function () { plus.parentNode && plus.parentNode.removeChild(plus); }, 1100);
   }
 
+  /* Kurzer Hinweis oben, verschwindet von selbst */
+  var toastTimer;
+  function toast(text) {
+    var t = $('toast');
+    t.textContent = text;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3200);
+  }
+
+  /* -------------------------- Elternfreigabe -------------------------- */
+  /* Rechenaufgabe vor „Alles zurücksetzen“, die Erwachsene schnell lösen,
+     5–8-Jährige aber nicht. Wird jedes Mal neu verlangt. */
+
+  var parentCallback = null;
+  var pgAnswer = 0;
+  var pgValue = '';
+
+  function requireParent(cb) {
+    parentCallback = cb;
+    newParentTask();
+    openModal('parentModal');
+  }
+
+  function newParentTask() {
+    var a, b, text;
+    if (Math.random() < 0.5) {
+      a = 6 + Math.floor(Math.random() * 4);    // 6–9 (kleines Einmaleins)
+      b = 6 + Math.floor(Math.random() * 4);    // 6–9
+      text = a + ' × ' + b;
+      pgAnswer = a * b;
+    } else {
+      a = 25 + Math.floor(Math.random() * 45);  // 25–69
+      b = 15 + Math.floor(Math.random() * 15);  // 15–29
+      text = a + ' + ' + b;
+      pgAnswer = a + b;
+    }
+    $('pgTask').textContent = text + ' = ?';
+    pgValue = '';
+    $('pgInput').textContent = '';
+  }
+
+  (function buildPad() {
+    var pad = $('pgPad');
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', 'OK'].forEach(function (k) {
+      var b = el('button', k === 'OK' ? 'ok' : (k === '⌫' ? 'del' : ''), k);
+      b.addEventListener('click', function () {
+        if (k === '⌫') pgValue = pgValue.slice(0, -1);
+        else if (k === 'OK') return checkParent();
+        else if (pgValue.length < 4) pgValue += k;
+        $('pgInput').textContent = pgValue;
+      });
+      pad.appendChild(b);
+    });
+  })();
+
+  function checkParent() {
+    if (pgValue !== '' && +pgValue === pgAnswer) {
+      closeModal('parentModal');
+      var cb = parentCallback;
+      parentCallback = null;
+      if (cb) cb();
+    } else {
+      var d = $('parentModal').querySelector('.dialog');
+      d.classList.remove('wrong'); void d.offsetWidth; d.classList.add('wrong');
+      newParentTask();
+    }
+  }
+
+  $('pgCancel').addEventListener('click', function () {
+    parentCallback = null;
+    closeModal('parentModal');
+  });
+
   /* --------------------------- Zurücksetzen -------------------------- */
 
   function openModal(id) { $(id).classList.add('open'); }
   function closeModal(id) { $(id).classList.remove('open'); }
 
-  $('resetBtn').addEventListener('click', function () {
+  $('resetBtn').addEventListener('click', function () { requireParent(openResetConfirm); });
+  function openResetConfirm() {
     $('confirmText').textContent = ROUTINES[state.current.routine].label + ' von ' + kidName() + ' zurücksetzen?';
     openModal('confirmModal');
-  });
+  }
   $('confirmNo').addEventListener('click', function () { closeModal('confirmModal'); });
+  // Zurücksetzen (nur nach Elternfreigabe) gibt auch die Belohnung wieder frei –
+  // z. B. wenn ein Kind beim falschen Geschwisterkind abgehakt hat
   $('confirmYes').addEventListener('click', function () {
     kidState().done[state.current.routine] = {};
+    kidState().rewarded[state.current.routine] = '';
     save();
     closeModal('confirmModal');
     renderGrid();
@@ -770,7 +877,8 @@
 
   var settingsRoutine = 'morning';
 
-  $('gearBtn').addEventListener('click', function () {
+  $('gearBtn').addEventListener('click', openSettings);
+  function openSettings() {
     settingsRoutine = state.current.routine;
     var input = $('nameInput');
     input.value = kidState().name || '';
@@ -779,7 +887,7 @@
     renderSettings();
     openModal('settingsModal');
     $('settingsModal').querySelector('.settings-body').scrollTop = 0;
-  });
+  }
 
   /* Versionsnummer aus dem Cache-Namen des Service Workers (sw.js: 'routine-app-vX').
      Zeigt die installierte Version – so sieht man, ob ein Update angekommen ist. */
@@ -825,6 +933,7 @@
     kidState().tiles[settingsRoutine] = DEFAULT_TILES[settingsRoutine].slice();
     changedTiles();
   });
+
 
   function changedTiles() {
     pruneDone(state.current.kid, settingsRoutine);
@@ -930,9 +1039,10 @@
   }
 
   /* ======================= Belohnungs-Animationen ======================= */
-  /* Die Belohnung bleibt so lange stehen, bis das Kind auf „Weiter“ oder
-     irgendwo auf den Bildschirm tippt. Endlos-Effekte laufen nach
-     LOOP_LIMIT ms aus, damit alte iPads nicht dauerhaft rechnen. */
+  /* Festliche Animation nach einer geschafften Routine. Sie bleibt stehen,
+     bis das Kind auf „Weiter“ oder irgendwo auf den Bildschirm tippt.
+     Endlos-Effekte laufen nach LOOP_LIMIT ms aus, damit alte iPads nicht
+     dauerhaft rechnen. */
 
   var celebrateBox = $('celebrate');
   var stage = $('celebrateStage');
@@ -983,19 +1093,32 @@
     }
   }
 
-  /* Ein Feuerwerk-Funkenring an Position x/y */
+  /* Feuerwerk-Explosion an x/y: äußerer Ring + innerer Glitzer */
   function firework(x, y, color, n) {
-    n = n || 22;
+    n = n || 26;
     color = color || pick(NEON);
+    var inner = pick(NEON);
     for (var i = 0; i < n; i++) {
-      var p = add('c-fw', '', { left: x + 'px', top: y + 'px', backgroundColor: color, boxShadow: '0 0 10px 2px ' + color });
       var ang = (Math.PI * 2 * i) / n;
-      var d = rand(90, 170);
-      animateTo(p, { transform: 'translate(' + Math.round(Math.cos(ang) * d) + 'px,' + Math.round(Math.sin(ang) * d + 40) + 'px) scale(.3)', opacity: '0' });
+      var big = i % 2 === 0;
+      var c = big ? color : inner;
+      var d = big ? rand(130, 190) : rand(60, 100);
+      var p = add('c-fw', '', { left: x + 'px', top: y + 'px', backgroundColor: c, boxShadow: '0 0 10px 2px ' + c });
+      animateTo(p, { transform: 'translate(' + Math.round(Math.cos(ang) * d) + 'px,' + Math.round(Math.sin(ang) * d + 50) + 'px) scale(.3)', opacity: '0' });
       removeLater(p, 1300);
     }
   }
-  function randomFirework() { firework(rand(W() * 0.1, W() * 0.9), rand(H() * 0.08, H() * 0.5)); }
+
+  /* Rakete steigt mit Leuchtspur vom unteren Rand auf und explodiert */
+  function launchFirework(x, y, color) {
+    x = x === undefined ? rand(W() * 0.12, W() * 0.88) : x;
+    y = y === undefined ? rand(H() * 0.1, H() * 0.45) : y;
+    var s = add('c-launch', '', { left: x + 'px', top: (H() + 20) + 'px' });
+    var rise = H() + 20 - y;
+    animateTo(s, { transform: 'translateY(-' + Math.round(rise) + 'px)' });
+    removeLater(s, 800);
+    later(function () { firework(x, y, color); }, 750);
+  }
 
   function twinkleStars(count) {
     for (var i = 0; i < count; i++) {
@@ -1009,249 +1132,124 @@
 
   function banner(text, color) { return add('c-banner ' + color, text); }
 
-  /* Pokal mit drei Sternen – wie am Ende eines Spiel-Levels */
-  function levelComplete(name, total, night) {
+  /* Pokal mit drei Sternen, die nacheinander aufleuchten */
+  function trophy(night) {
     add('c-rays');
-    banner(night ? 'MISSION ERFÜLLT!' : 'LEVEL GESCHAFFT!', night ? 'violet' : 'gold');
+    banner(night ? 'ALLES GESCHAFFT!' : 'SUPER GEMACHT!', night ? 'violet' : 'gold');
     add('c-trophy', '🏆');
     var row = add('c-starrow');
-    var stars = [];
-    for (var i = 0; i < 3; i++) { var st = el('span', '', '⭐'); row.appendChild(st); stars.push(st); }
-    stars.forEach(function (st, i) {
-      later(function () {
-        st.classList.add('on');
-        var r = st.getBoundingClientRect();
-        firework(r.left + r.width / 2, r.top + r.height / 2, '#facc15', 16);
-      }, 1000 + i * 450);
-    });
-    if (night) {
-      later(function () { twinkleStars(20); }, 2400);
-    } else {
-      later(function () { confettiBurst(70); shake(); }, 2400);
-      every(function () { confettiBurst(25); }, 5000);
+    for (var i = 0; i < 3; i++) {
+      (function (st, i) {
+        row.appendChild(st);
+        later(function () {
+          st.classList.add('on');
+          var r = st.getBoundingClientRect();
+          firework(r.left + r.width / 2, r.top + r.height / 2, '#facc15', 16);
+        }, 1000 + i * 450);
+      })(el('span', '', '⭐'), i);
     }
-    return [(night ? 'Super, ' : 'Stark, ') + name + '!', 'Alle ' + total + ' Aufgaben geschafft – 3 Sterne!'];
-  }
-
-  /* Sammelkarte: wackelt, bis sie angetippt wird (oder nach 5 s von selbst) */
-  var CARD_RARITY = [
-    { label: 'SELTEN',    color: '#22d3ee', weight: 55 },
-    { label: 'EPISCH',    color: '#c084fc', weight: 32 },
-    { label: 'LEGENDÄR',  color: '#facc15', weight: 13 }
-  ];
-  var CARD_POOL = {
-    morning: [
-      [{ e: '🦁', n: 'Löwe' }, { e: '🐬', n: 'Delfin' }, { e: '🐙', n: 'Krake' }, { e: '🦒', n: 'Giraffe' }, { e: '🐊', n: 'Krokodil' }],
-      [{ e: '🦈', n: 'Hai' }, { e: '🦅', n: 'Adler' }, { e: '🤖', n: 'Roboter' }, { e: '🐯', n: 'Tiger' }],
-      [{ e: '🐉', n: 'Drache' }, { e: '🦄', n: 'Einhorn' }, { e: '🦖', n: 'T-Rex' }]
-    ],
-    evening: [
-      [{ e: '🦉', n: 'Eule' }, { e: '🦊', n: 'Fuchs' }, { e: '🐨', n: 'Koala' }, { e: '🦔', n: 'Igel' }],
-      [{ e: '🐺', n: 'Wolf' }, { e: '🦇', n: 'Fledermaus' }, { e: '👽', n: 'Alien' }, { e: '🐼', n: 'Panda' }],
-      [{ e: '🐉', n: 'Drache' }, { e: '🦄', n: 'Einhorn' }, { e: '🌟', n: 'Glücksstern' }]
-    ]
-  };
-  function pickRarity() {
-    var sum = 0, i;
-    for (i = 0; i < CARD_RARITY.length; i++) sum += CARD_RARITY[i].weight;
-    var x = Math.random() * sum;
-    for (i = 0; i < CARD_RARITY.length; i++) { x -= CARD_RARITY[i].weight; if (x < 0) return i; }
-    return 0;
-  }
-  function cardReveal(name, total, routine) {
-    var ri = pickRarity();
-    var rar = CARD_RARITY[ri];
-    var item = pick(CARD_POOL[routine][ri]);
-    var card = add('c-card wobble');
-    var inner = el('div', 'c-card-inner');
-    inner.appendChild(el('div', 'face back', '?'));
-    var front = el('div', 'face front');
-    front.style.borderColor = rar.color;
-    front.style.boxShadow = '0 0 50px ' + rar.color;
-    front.appendChild(el('span', 'em', item.e));
-    var tag = el('span', 'rar', rar.label);
-    tag.style.backgroundColor = rar.color;
-    if (ri === 2) tag.style.color = '#422006';
-    front.appendChild(tag);
-    inner.appendChild(front);
-    card.appendChild(inner);
-    var hint = add('c-tap', '👆 Tippe auf die Karte!');
-    var flipped = false;
-
-    function flip() {
-      if (flipped) return;
-      flipped = true;
-      card.className = 'c-abs c-card flip';
-      hint.parentNode && hint.parentNode.removeChild(hint);
-      later(function () {
-        var rays = add('c-rays');
-        stage.insertBefore(rays, stage.firstChild);
-        banner(rar.label + '!', ri === 2 ? 'gold' : ri === 1 ? 'violet' : 'cyan');
-        var r = card.getBoundingClientRect();
-        firework(r.left + r.width / 2, r.top + r.height / 2, rar.color, 28);
-        if (ri === 2) { shake(); confettiBurst(60); }
-        showMsg('Juhu, ' + name + '!', 'Dein Power-Tier heute: ' + item.n + ' ' + item.e);
-      }, 500);
-    }
-    card.addEventListener('click', function (e) { e.stopPropagation(); flip(); });
-    later(flip, 5000);
-    if (routine === 'evening') twinkleStars(14);
-    return ['Geschafft, ' + name + '!', 'Was steckt wohl in deiner Karte?'];
   }
 
   var MORNING_ANIMS = [
-    // 1) Level geschafft: Pokal, 3 Sterne, Konfetti
-    function (name, total) { return levelComplete(name, total, false); },
-
-    // 2) Rakete startet, danach Feuerwerk
+    // 1) Pokal mit Sternen und Konfetti
+    function (name, total) {
+      trophy(false);
+      later(function () { confettiBurst(70); shake(); }, 2400);
+      every(function () { confettiBurst(25); }, 5000);
+      return ['Stark, ' + name + '!', 'Alle ' + total + ' Aufgaben geschafft! 🏆'];
+    },
+    // 2) Großes Feuerwerk
     function (name) {
-      var rocket = add('c-rocket');
-      var inner = el('div', '', '🚀');
-      setTransform(inner, 'rotate(-45deg)');
-      rocket.appendChild(inner);
-      shake();
-      var trail = every(function () {
-        var r = rocket.getBoundingClientRect();
-        if (r.bottom < 0) return;
-        var t = add('c-trail', pick(['🔥', '✨', '💨', '⭐']), { left: (r.left + r.width / 2 - 20) + 'px', top: (r.bottom - 30) + 'px' });
-        setTransform(t, 'scale(.4)');
-        animateTo(t, { transform: 'translate(' + Math.round(rand(-80, 80)) + 'px,120px) scale(1.3)', opacity: '0' });
-        removeLater(t, 1500);
-      }, 90);
+      banner('FEUERWERK!', 'cyan');
+      for (var i = 0; i < 3; i++) later(launchFirework, i * 300);
+      every(launchFirework, 650);
       later(function () {
-        clearInterval(trail);
-        banner('START GEGLÜCKT!', 'cyan');
-        flash();
-        for (var i = 0; i < 3; i++) randomFirework();
-        every(randomFirework, 650);
-      }, 2600);
-      return ['Wow, ' + name + '!', 'Du startest durch wie eine Rakete! 🚀'];
+        flash(); shake();
+        for (var j = 0; j < 5; j++) later(launchFirework, j * 120);
+      }, 5000);
+      return ['Wow, ' + name + '!', 'Ein Feuerwerk nur für dich! 🎆'];
     },
-
-    // 3) Combo-Zähler mit Blitzen
-    function (name, total) {
-      add('c-bolt', '⚡', { left: '6%', top: '22%' });
-      add('c-bolt', '⚡', { right: '6%', top: '22%', animationDelay: '.4s' });
-      var box = add('c-combo');
-      var num = el('span', 'num', '0');
-      box.appendChild(num);
-      box.appendChild(el('span', 'lbl', 'COMBO'));
-      var n = 0;
-      var step = Math.max(120, Math.round(1600 / Math.max(total, 1)));
-      var counter = every(function () {
-        n++;
-        num.textContent = 'x' + n;
-        num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop');
-        if (n >= total) {
-          clearInterval(counter);
-          later(function () {
-            flash(); shake();
-            banner('PERFEKT!', 'gold');
-            confettiBurst(70);
-            firework(W() / 2, centerY(), '#facc15', 30);
-          }, 300);
-        }
-      }, step);
-      return ['Wahnsinn, ' + name + '!', 'Alle ' + total + ' Aufgaben am Stück! ⚡'];
+    // 3) Konfetti-Party
+    function (name) {
+      add('c-rays');
+      add('c-party', '🎉');
+      banner('PARTY!', 'gold');
+      confettiBurst(90);
+      later(function () { confettiBurst(60); shake(); }, 1800);
+      every(function () { confettiBurst(30); }, 4000);
+      return ['Juhu, ' + name + '!', 'Alles geschafft – Party! 🥳'];
     },
-
-    // 4) Münzregen mit Punktezähler
-    function (name, total) {
-      var points = total * 100;
-      var score = add('c-score');
-      score.appendChild(el('span', 'lbl', 'PUNKTE'));
-      var num = el('span', 'num', '0');
-      score.appendChild(num);
-      var shown = 0;
-      var count = every(function () {
-        shown = Math.min(points, shown + Math.ceil(points / 30));
-        num.textContent = shown;
-        if (shown >= points) {
-          clearInterval(count);
-          banner('JACKPOT!', 'gold');
-          flash(); shake();
-          firework(W() / 2, H() * 0.35, '#facc15', 30);
-        }
-      }, 60);
-      var rain = every(function () {
-        var dur = rand(1.8, 3.2);
-        var c = add('c-coin', '', { left: rand(0, W() - 64) + 'px', animationDuration: dur + 's' });
-        var face = el('div', '', '★');
-        face.style.animationDelay = (-rand(0, 0.7)) + 's';
-        c.appendChild(face);
-        removeLater(c, dur * 1000 + 100);
-      }, 140);
-      later(function () { clearInterval(rain); }, 6000);
-      return ['Jackpot, ' + name + '!', 'Du hast ' + points + ' Punkte geholt! 💰'];
+    // 4) Luftballons steigen auf
+    function (name) {
+      banner('HURRA!', 'gold');
+      function balloon() {
+        var dur = rand(5, 7.5);
+        var b = add('c-balloon', '', { left: rand(0, W() - 110) + 'px', animationDuration: dur.toFixed(2) + 's' });
+        var inner = el('div');
+        inner.style.backgroundColor = pick(['#f472b6', '#22d3ee', '#a3e635', '#fb923c', '#c084fc', '#facc15', '#f87171']);
+        inner.style.animationDelay = (-rand(0, 2.4)).toFixed(2) + 's';
+        b.appendChild(inner);
+        removeLater(b, dur * 1000 + 200);
+      }
+      for (var i = 0; i < 10; i++) later(balloon, i * 150);
+      every(balloon, 450);
+      later(function () { confettiBurst(50); }, 1200);
+      return ['Toll gemacht, ' + name + '!', 'Die Luftballons fliegen für dich! 🎈'];
     },
-
-    // 5) Geheimnisvolle Sammelkarte
-    function (name, total) { return cardReveal(name, total, 'morning'); }
+    // 5) Goldmedaille
+    function (name) {
+      add('c-rays');
+      add('c-medal', '🥇');
+      banner('GOLD!', 'gold');
+      later(function () { flash(); firework(W() / 2, centerY(), '#facc15', 32); confettiBurst(60); }, 900);
+      every(function () { launchFirework(); }, 1500);
+      return ['Klasse, ' + name + '!', 'Du bist heute ein Champion! 🥇'];
+    }
   ];
 
   var EVENING_ANIMS = [
-    // 1) Mission erfüllt: Pokal, 3 Sterne
-    function (name, total) { return levelComplete(name, total, true); },
-
-    // 2) Warp-Flug zu einem Planeten
-    function (name) {
-      var warpBox = add('c-warp');
-      for (var i = 0; i < 46; i++) {
-        var ray = add('c-warp-ray', '', null, warpBox);
-        setTransform(ray, 'rotate(' + Math.round(rand(0, 360)) + 'deg)');
-        var line = el('div');
-        line.style.animationDelay = (-rand(0, 0.9)).toFixed(2) + 's';
-        line.style.animationDuration = rand(0.6, 1.1).toFixed(2) + 's';
-        ray.appendChild(line);
-      }
-      later(function () {
-        warpBox.style.opacity = '0';
-        removeLater(warpBox, 900);
-        flash();
-        twinkleStars(22);
-        var planet = add('c-planet');
-        planet.appendChild(el('div', 'ring'));
-        planet.appendChild(el('div', 'body'));
-        planet.appendChild(el('div', 'ring front'));
-        banner('ZIEL ERREICHT!', 'cyan');
-      }, 2600);
-      return ['Super, ' + name + '!', 'Mit Warp-Tempo ab ins Traumland! 🌌'];
+    // 1) Pokal mit Sternen
+    function (name, total) {
+      trophy(true);
+      later(function () { twinkleStars(20); }, 2400);
+      return ['Super, ' + name + '!', 'Alle ' + total + ' Aufgaben geschafft! 🏆'];
     },
-
-    // 3) Sternschnuppen-Regen
+    // 2) Feuerwerk am Nachthimmel
+    function (name) {
+      twinkleStars(16);
+      banner('FEUERWERK!', 'violet');
+      for (var i = 0; i < 3; i++) later(launchFirework, i * 300);
+      every(launchFirework, 700);
+      return ['Wow, ' + name + '!', 'Ein Feuerwerk am Nachthimmel! 🎆'];
+    },
+    // 3) Sternschnuppen
     function (name) {
       twinkleStars(24);
       banner('WÜNSCH DIR WAS!', 'violet');
       every(function () {
-        var s = add('c-shoot', '', { left: rand(-100, W() * 0.6) + 'px', top: rand(0, H() * 0.45) + 'px' });
-        removeLater(s, 1400);
+        removeLater(add('c-shoot', '', { left: rand(-100, W() * 0.6) + 'px', top: rand(0, H() * 0.45) + 'px' }), 1400);
       }, 420);
       return ['Toll, ' + name + '!', 'So viele Sternschnuppen – nur für dich! 🌠'];
     },
-
-    // 4) Nordlicht mit Glühwürmchen
+    // 4) Nordlicht
     function (name) {
       add('c-aurora', '', { background: 'linear-gradient(to bottom, rgba(34,211,238,0), rgba(34,211,238,.45) 45%, rgba(34,211,238,0))' });
       add('c-aurora', '', { top: '8%', background: 'linear-gradient(to bottom, rgba(163,230,53,0), rgba(163,230,53,.4) 50%, rgba(163,230,53,0))', animationDelay: '-2.5s', animationDuration: '9s' });
       add('c-aurora', '', { top: '15%', background: 'linear-gradient(to bottom, rgba(192,132,252,0), rgba(192,132,252,.4) 50%, rgba(192,132,252,0))', animationDelay: '-5s', animationDuration: '8s' });
-      twinkleStars(14);
-      var flies = [];
-      for (var i = 0; i < 24; i++) {
-        flies.push(add('c-firefly', '', { left: rand(0, W()) + 'px', top: rand(H() * 0.3, H()) + 'px', opacity: '.2' }));
-      }
-      function moveFlies() {
-        flies.forEach(function (f) {
-          setTransform(f, 'translate(' + Math.round(rand(-120, 120)) + 'px,' + Math.round(rand(-120, 120)) + 'px)');
-          f.style.opacity = rand(0.3, 1).toFixed(2);
-        });
-      }
-      later(moveFlies, 50);
-      every(moveFlies, 2200);
-      return ['Wunderbar, ' + name + '!', 'Das Nordlicht tanzt für dich ✨'];
+      twinkleStars(20);
+      banner('WUNDERBAR!', 'cyan');
+      return ['Wunderbar, ' + name + '!', 'Das Nordlicht leuchtet für dich ✨'];
     },
-
-    // 5) Geheimnisvolle Sammelkarte (Nacht-Tiere)
-    function (name, total) { return cardReveal(name, total, 'evening'); }
+    // 5) Goldmedaille unter Sternen
+    function (name) {
+      twinkleStars(14);
+      add('c-rays');
+      add('c-medal', '🥇');
+      banner('GOLD!', 'gold');
+      later(function () { flash(); firework(W() / 2, centerY(), '#facc15', 32); }, 900);
+      every(function () { launchFirework(); }, 1800);
+      return ['Klasse, ' + name + '!', 'Schlaf schön, du Champion! 🥇'];
+    }
   ];
 
   function showMsg(title, sub) {
@@ -1267,11 +1265,11 @@
     var routine = state.current.routine;
     var anims = routine === 'morning' ? MORNING_ANIMS : EVENING_ANIMS;
     var idx;
-    do { idx = Math.floor(Math.random() * anims.length); } while (anims.length > 1 && idx === lastAnim[routine]);
+    do { idx = Math.floor(Math.random() * anims.length); } while (idx === lastAnim[routine]);
     lastAnim[routine] = idx;
 
     closeCelebrate();
-    celebrateBox.className = 'celebrate open ' + routine;
+    celebrateBox.className = 'celebrate open ready ' + routine;
     var next = $('celebrateNext');
     next.style.animation = 'none'; void next.offsetWidth; next.style.animation = '';
     var msg = anims[idx](kidName(), progress().total);
@@ -1345,9 +1343,15 @@
 
   state = load();
   KIDS.forEach(function (k) { pruneDone(k.id, 'morning'); pruneDone(k.id, 'evening'); });
+  checkNewDay();
   save();
   render();
   initClock();
+
+  // Die App kann über Nacht offen bleiben → regelmäßig und beim Zurückkehren prüfen
+  function newDayRefresh() { if (checkNewDay()) render(); }
+  setInterval(newDayRefresh, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) newDayRefresh(); });
 
   var resizeTimer;
   window.addEventListener('resize', function () {
