@@ -4,7 +4,7 @@
 | Datei | Zweck |
 |---|---|
 | `index.html` | App-Gerüst, iOS-Meta-Tags für den Home-Bildschirm |
-| `style.css` | Design, Hintergründe (Sonne/Vögel bzw. Mond/Eule), Animationen |
+| `style.css` | Design im Gaming-Look, Hintergründe (Neon-Sonnenaufgang bzw. Weltraum), Animationen |
 | `app.js` | Logik: Kacheln, Speichern, Einstellungen, Belohnungs-Animationen |
 | `sw.js` | Service Worker, speichert alle Dateien für den Offline-Betrieb |
 | `manifest.json` | Web-App-Manifest |
@@ -25,8 +25,8 @@ Ein Service Worker funktioniert nur über **HTTPS**. Die Dateien müssen daher e
 ## Bedienung
 - **Kind wählen:** oben links. Die Namen werden im ⚙️-Menü eingetragen und nur auf dem iPad gespeichert, nicht im Code.
 - **Routine wählen:** ☀️ Morgen / 🌙 Abend. Der Fortschritt bleibt beim Umschalten erhalten.
-- **Kachel antippen:** Sie wird grün. Nochmal antippen macht es rückgängig.
-- **Alle Kacheln erledigt:** Eine zufällige Belohnungs-Animation erscheint (je 5 für morgens und abends).
+- **Kachel antippen:** Sie wird grün, ein „+1“ steigt auf und die Energie-Leiste oben füllt sich. Nochmal antippen macht es rückgängig.
+- **Alle Kacheln erledigt:** Eine zufällige Belohnung erscheint (je 5 für morgens und abends, z. B. Pokal mit 3 Sternen, Combo-Zähler, Münzregen, Sammelkarte zum Aufdecken, Warp-Flug). Sie bleibt stehen, bis das Kind auf **Weiter** oder irgendwo auf den Bildschirm tippt.
 - **↺ Alles zurücksetzen:** gilt nur für das aktuelle Kind und die aktuelle Routine.
 - **⚙️ Zahnrad:** Einstellungen für das aktuelle Kind. Dort lassen sich Name und Bild festlegen sowie Kacheln für morgens und abends hinzufügen, entfernen oder sortieren (max. 12).
 

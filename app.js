@@ -354,9 +354,10 @@
               'zaehne', 'schlafanzug', 'mein-tag', 'toilette']
   };
 
-  var TILE_COLORS = {
-    morning: ['#ffe4d6', '#fff2c2', '#dcf5d3', '#d6eeff', '#ece0ff', '#ffe0ef'],
-    evening: ['#e3e3ff', '#dcecff', '#efe0ff', '#fff3cf', '#dff4f0', '#ffe3ef']
+  /* Neon-Akzentfarben der Kacheln (Leuchtstreifen, Rahmen, Schein) */
+  var TILE_ACCENTS = {
+    morning: ['#fb923c', '#f472b6', '#facc15', '#22d3ee', '#a3e635', '#c084fc'],
+    evening: ['#818cf8', '#22d3ee', '#c084fc', '#facc15', '#34d399', '#f472b6']
   };
 
   /* ---------------------------- Speicher ---------------------------- */
@@ -490,8 +491,8 @@
     document.body.className = routine;
     document.documentElement.className = routine;
     var meta = document.querySelector('meta[name="theme-color"]');
-    // iOS 26 füllt den Bereich um den Home-Balken mit der Theme-Farbe → Farbe des unteren Randes (Wiese/Nachthügel)
-    if (meta) meta.setAttribute('content', routine === 'morning' ? '#7ccd5b' : '#16204a');
+    // iOS 26 füllt den Bereich um den Home-Balken mit der Theme-Farbe → Farbe des unteren Randes (Neon-Boden/Weltraum)
+    if (meta) meta.setAttribute('content', routine === 'morning' ? '#14072e' : '#241052');
 
     renderKidTheme();
     renderKids();
@@ -508,7 +509,12 @@
     KIDS.forEach(function (kid) {
       var b = el('button', 'kid-btn');
       var active = kid.id === state.current.kid;
-      if (active) { b.className += ' active'; b.style.backgroundColor = state.kids[kid.id].color; }
+      if (active) {
+        var c = state.kids[kid.id].color;
+        b.className += ' active';
+        b.style.backgroundColor = c;
+        b.style.boxShadow = '0 5px 0 rgba(0,0,0,.3), 0 0 26px ' + hexToRgba(c, 0.75);
+      }
       var a = el('span', 'avatar', state.kids[kid.id].avatar);
       b.appendChild(a);
       b.appendChild(el('span', 'name', kidName(kid.id)));
@@ -544,7 +550,8 @@
     var ks = kidState();
     var key = state.current.kid + ks.avatar + ks.color;
     var frame = $('kidFrame');
-    frame.style.boxShadow = 'inset 0 0 0 10px ' + ks.color + ', inset 0 0 90px ' + hexToRgba(ks.color, 0.45);
+    frame.style.boxShadow = 'inset 0 0 0 5px ' + ks.color + ', inset 0 0 30px ' + hexToRgba(ks.color, 0.6) +
+      ', inset 0 0 120px ' + hexToRgba(ks.color, 0.3);
     if (key === lastThemeKey) return;
     var first = lastThemeKey === '';
     lastThemeKey = key;
@@ -573,6 +580,7 @@
     box.innerHTML = '';
     var av = el('div', 'av', ks.avatar);
     av.style.backgroundColor = ks.color;
+    av.style.boxShadow = '0 0 0 12px ' + hexToRgba(ks.color, 0.3) + ', 0 0 80px ' + hexToRgba(ks.color, 0.9);
     box.appendChild(av);
     box.appendChild(el('div', 'nm', 'Hallo ' + kidName() + '!'));
     box.className = 'kid-splash';
@@ -587,7 +595,7 @@
     var ks = kidState();
     var list = slots(ks.tiles[routine]);
     var done = ks.done[routine];
-    var colors = TILE_COLORS[routine];
+    var colors = TILE_ACCENTS[routine];
 
     grid.innerHTML = '';
     if (!list.length) {
@@ -597,7 +605,12 @@
     list.forEach(function (s, i) {
       var t = el('button', 'tile' + (done[s.key] ? ' done' : ''));
       t.setAttribute('data-key', s.key);
-      t.style.backgroundColor = colors[i % colors.length];
+      var c = colors[i % colors.length];
+      if (t.style.setProperty) {
+        t.style.setProperty('--c', c);
+        t.style.setProperty('--cl', hexToRgba(c, 0.7));
+        t.style.setProperty('--cg', hexToRgba(c, 0.38));
+      }
       t.appendChild(el('div', 'fill'));
       t.appendChild(iconEl('div', 'icon', s.tile));
       t.appendChild(el('div', 'label', s.tile.label));
@@ -650,10 +663,28 @@
     return { done: count, total: list.length };
   }
 
+  /* Energie-Leiste: ein Segment pro Kachel */
   function updateProgress() {
     var p = progress();
-    $('progressFill').style.width = (p.total ? (p.done / p.total) * 100 : 0) + '%';
-    $('progressText').textContent = (p.total && p.done === p.total ? '⭐ ' : '') + p.done + ' / ' + p.total;
+    var bar = $('progress');
+    var segs = bar.children;
+    if (segs.length !== p.total) {
+      bar.innerHTML = '';
+      for (var i = 0; i < p.total; i++) bar.appendChild(el('div', 'seg'));
+      segs = bar.children;
+    }
+    for (var j = 0; j < segs.length; j++) {
+      var on = j < p.done;
+      if (on && !segs[j].classList.contains('on')) {
+        segs[j].classList.add('on');
+        segs[j].classList.remove('just'); void segs[j].offsetWidth; segs[j].classList.add('just');
+      } else if (!on) {
+        segs[j].classList.remove('on', 'just');
+      }
+    }
+    var full = p.total > 0 && p.done === p.total;
+    bar.classList.toggle('full', full);
+    $('progressText').textContent = (full ? '🏆 ' : '⚡ ') + p.done + ' / ' + p.total;
   }
 
   function toggleTile(key, tile) {
@@ -696,6 +727,13 @@
       });
       (function (node) { setTimeout(function () { node.parentNode && node.parentNode.removeChild(node); }, 1000); })(s);
     }
+    // "+1" steigt aus der Kachel auf
+    var plus = el('div', 'plus-one', '+1');
+    plus.style.left = cx + 'px';
+    plus.style.top = (cy - 30) + 'px';
+    document.body.appendChild(plus);
+    animateTo(plus, { transform: 'translateY(-' + Math.round(r.height * 0.6 + 40) + 'px) scale(1.3)', opacity: '0' });
+    setTimeout(function () { plus.parentNode && plus.parentNode.removeChild(plus); }, 1100);
   }
 
   /* --------------------------- Zurücksetzen -------------------------- */
@@ -892,160 +930,314 @@
   }
 
   /* ======================= Belohnungs-Animationen ======================= */
+  /* Die Belohnung bleibt so lange stehen, bis das Kind auf „Weiter“ oder
+     irgendwo auf den Bildschirm tippt. Endlos-Effekte laufen nach
+     LOOP_LIMIT ms aus, damit alte iPads nicht dauerhaft rechnen. */
 
   var celebrateBox = $('celebrate');
   var stage = $('celebrateStage');
   var celebrateTimers = [];
+  var loopTimers = [];
   var celebrateOpenedAt = 0;
   var lastAnim = { morning: -1, evening: -1 };
+  var CLOSE_DELAY = 1500;
+  var LOOP_LIMIT = 30000;
 
   function later(fn, ms) { celebrateTimers.push(setTimeout(fn, ms)); }
-  function every(fn, ms) { celebrateTimers.push(setInterval(fn, ms)); }
+  function every(fn, ms) { var t = setInterval(fn, ms); loopTimers.push(t); return t; }
+  function stopLoops() { loopTimers.forEach(function (t) { clearInterval(t); }); loopTimers = []; }
 
-  function add(cls, text, css) {
+  function add(cls, text, css, parent) {
     var e = el('div', 'c-abs ' + cls, text);
     if (css) for (var k in css) e.style[k] = css[k];
-    stage.appendChild(e);
+    (parent || stage).appendChild(e);
     return e;
+  }
+  function removeLater(node, ms) {
+    later(function () { node.parentNode && node.parentNode.removeChild(node); }, ms);
   }
 
   function W() { return window.innerWidth; }
   function H() { return window.innerHeight; }
+  function centerY() { return H() * 0.4; }
+
+  var NEON = ['#f472b6', '#facc15', '#a3e635', '#22d3ee', '#c084fc', '#fb923c', '#ffffff'];
+
+  function shake() {
+    stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake');
+  }
+  function flash() { removeLater(add('c-flash'), 500); }
 
   function confettiBurst(count) {
-    var colors = ['#ff5e5e', '#ffb627', '#ffe14d', '#4cd964', '#34aadc', '#a77bff', '#ff7ac2'];
     for (var i = 0; i < count; i++) {
       var dur = rand(2.4, 4.2);
       var c = add('c-confetti', '', {
         left: rand(0, W()) + 'px',
-        backgroundColor: pick(colors),
+        backgroundColor: pick(NEON),
+        borderRadius: Math.random() < 0.3 ? '50%' : '3px',
         transitionDuration: dur + 's'
       });
       animateTo(c, { transform: 'translate(' + Math.round(rand(-120, 120)) + 'px,' + (H() + 80) + 'px) rotate(' + Math.round(rand(360, 1080)) + 'deg)' },
         Math.round(rand(0, 1200)));
+      removeLater(c, 5600);
     }
   }
+
+  /* Ein Feuerwerk-Funkenring an Position x/y */
+  function firework(x, y, color, n) {
+    n = n || 22;
+    color = color || pick(NEON);
+    for (var i = 0; i < n; i++) {
+      var p = add('c-fw', '', { left: x + 'px', top: y + 'px', backgroundColor: color, boxShadow: '0 0 10px 2px ' + color });
+      var ang = (Math.PI * 2 * i) / n;
+      var d = rand(90, 170);
+      animateTo(p, { transform: 'translate(' + Math.round(Math.cos(ang) * d) + 'px,' + Math.round(Math.sin(ang) * d + 40) + 'px) scale(.3)', opacity: '0' });
+      removeLater(p, 1300);
+    }
+  }
+  function randomFirework() { firework(rand(W() * 0.1, W() * 0.9), rand(H() * 0.08, H() * 0.5)); }
 
   function twinkleStars(count) {
     for (var i = 0; i < count; i++) {
       add('c-star', pick(['⭐', '✨', '🌟']), {
         left: rand(0, W() - 40) + 'px', top: rand(0, H() * 0.7) + 'px',
-        fontSize: Math.round(rand(24, 50)) + 'px',
+        fontSize: Math.round(rand(20, 46)) + 'px',
         animationDelay: rand(0, 1.5) + 's'
       });
     }
   }
 
+  function banner(text, color) { return add('c-banner ' + color, text); }
+
+  /* Pokal mit drei Sternen – wie am Ende eines Spiel-Levels */
+  function levelComplete(name, total, night) {
+    add('c-rays');
+    banner(night ? 'MISSION ERFÜLLT!' : 'LEVEL GESCHAFFT!', night ? 'violet' : 'gold');
+    add('c-trophy', '🏆');
+    var row = add('c-starrow');
+    var stars = [];
+    for (var i = 0; i < 3; i++) { var st = el('span', '', '⭐'); row.appendChild(st); stars.push(st); }
+    stars.forEach(function (st, i) {
+      later(function () {
+        st.classList.add('on');
+        var r = st.getBoundingClientRect();
+        firework(r.left + r.width / 2, r.top + r.height / 2, '#facc15', 16);
+      }, 1000 + i * 450);
+    });
+    if (night) {
+      later(function () { twinkleStars(20); }, 2400);
+    } else {
+      later(function () { confettiBurst(70); shake(); }, 2400);
+      every(function () { confettiBurst(25); }, 5000);
+    }
+    return [(night ? 'Super, ' : 'Stark, ') + name + '!', 'Alle ' + total + ' Aufgaben geschafft – 3 Sterne!'];
+  }
+
+  /* Sammelkarte: wackelt, bis sie angetippt wird (oder nach 5 s von selbst) */
+  var CARD_RARITY = [
+    { label: 'SELTEN',    color: '#22d3ee', weight: 55 },
+    { label: 'EPISCH',    color: '#c084fc', weight: 32 },
+    { label: 'LEGENDÄR',  color: '#facc15', weight: 13 }
+  ];
+  var CARD_POOL = {
+    morning: [
+      [{ e: '🦁', n: 'Löwe' }, { e: '🐬', n: 'Delfin' }, { e: '🐙', n: 'Krake' }, { e: '🦒', n: 'Giraffe' }, { e: '🐊', n: 'Krokodil' }],
+      [{ e: '🦈', n: 'Hai' }, { e: '🦅', n: 'Adler' }, { e: '🤖', n: 'Roboter' }, { e: '🐯', n: 'Tiger' }],
+      [{ e: '🐉', n: 'Drache' }, { e: '🦄', n: 'Einhorn' }, { e: '🦖', n: 'T-Rex' }]
+    ],
+    evening: [
+      [{ e: '🦉', n: 'Eule' }, { e: '🦊', n: 'Fuchs' }, { e: '🐨', n: 'Koala' }, { e: '🦔', n: 'Igel' }],
+      [{ e: '🐺', n: 'Wolf' }, { e: '🦇', n: 'Fledermaus' }, { e: '👽', n: 'Alien' }, { e: '🐼', n: 'Panda' }],
+      [{ e: '🐉', n: 'Drache' }, { e: '🦄', n: 'Einhorn' }, { e: '🌟', n: 'Glücksstern' }]
+    ]
+  };
+  function pickRarity() {
+    var sum = 0, i;
+    for (i = 0; i < CARD_RARITY.length; i++) sum += CARD_RARITY[i].weight;
+    var x = Math.random() * sum;
+    for (i = 0; i < CARD_RARITY.length; i++) { x -= CARD_RARITY[i].weight; if (x < 0) return i; }
+    return 0;
+  }
+  function cardReveal(name, total, routine) {
+    var ri = pickRarity();
+    var rar = CARD_RARITY[ri];
+    var item = pick(CARD_POOL[routine][ri]);
+    var card = add('c-card wobble');
+    var inner = el('div', 'c-card-inner');
+    inner.appendChild(el('div', 'face back', '?'));
+    var front = el('div', 'face front');
+    front.style.borderColor = rar.color;
+    front.style.boxShadow = '0 0 50px ' + rar.color;
+    front.appendChild(el('span', 'em', item.e));
+    var tag = el('span', 'rar', rar.label);
+    tag.style.backgroundColor = rar.color;
+    if (ri === 2) tag.style.color = '#422006';
+    front.appendChild(tag);
+    inner.appendChild(front);
+    card.appendChild(inner);
+    var hint = add('c-tap', '👆 Tippe auf die Karte!');
+    var flipped = false;
+
+    function flip() {
+      if (flipped) return;
+      flipped = true;
+      card.className = 'c-abs c-card flip';
+      hint.parentNode && hint.parentNode.removeChild(hint);
+      later(function () {
+        var rays = add('c-rays');
+        stage.insertBefore(rays, stage.firstChild);
+        banner(rar.label + '!', ri === 2 ? 'gold' : ri === 1 ? 'violet' : 'cyan');
+        var r = card.getBoundingClientRect();
+        firework(r.left + r.width / 2, r.top + r.height / 2, rar.color, 28);
+        if (ri === 2) { shake(); confettiBurst(60); }
+        showMsg('Juhu, ' + name + '!', 'Dein Power-Tier heute: ' + item.n + ' ' + item.e);
+      }, 500);
+    }
+    card.addEventListener('click', function (e) { e.stopPropagation(); flip(); });
+    later(flip, 5000);
+    if (routine === 'evening') twinkleStars(14);
+    return ['Geschafft, ' + name + '!', 'Was steckt wohl in deiner Karte?'];
+  }
+
   var MORNING_ANIMS = [
-    // 1) Die Sonne geht auf
-    function (name) {
-      var sun = add('c-sunrise');
-      sun.appendChild(el('div', 'rays'));
-      sun.appendChild(el('div', 'face', '🌞'));
-      later(function () { confettiBurst(40); }, 1200);
-      return ['Super, ' + name + '!', 'Die Sonne freut sich mit dir! ☀️'];
-    },
-    // 2) Konfetti-Party
-    function (name) {
-      add('c-bigmoon', '🎉', { left: '50%', top: '30%', marginLeft: '-80px', right: 'auto', fontSize: '160px' });
-      confettiBurst(80);
-      later(function () { confettiBurst(50); }, 1600);
-      return ['Juhu, ' + name + '!', 'Alles geschafft – Party! 🥳'];
-    },
-    // 3) Rakete startet
+    // 1) Level geschafft: Pokal, 3 Sterne, Konfetti
+    function (name, total) { return levelComplete(name, total, false); },
+
+    // 2) Rakete startet, danach Feuerwerk
     function (name) {
       var rocket = add('c-rocket');
       var inner = el('div', '', '🚀');
       setTransform(inner, 'rotate(-45deg)');
       rocket.appendChild(inner);
-      every(function () {
+      shake();
+      var trail = every(function () {
         var r = rocket.getBoundingClientRect();
         if (r.bottom < 0) return;
-        var t = add('c-trail', pick(['✨', '⭐', '💨', '🌟']), { left: (r.left + r.width / 2 - 20) + 'px', top: (r.bottom - 30) + 'px' });
+        var t = add('c-trail', pick(['🔥', '✨', '💨', '⭐']), { left: (r.left + r.width / 2 - 20) + 'px', top: (r.bottom - 30) + 'px' });
         setTransform(t, 'scale(.4)');
         animateTo(t, { transform: 'translate(' + Math.round(rand(-80, 80)) + 'px,120px) scale(1.3)', opacity: '0' });
+        removeLater(t, 1500);
       }, 90);
+      later(function () {
+        clearInterval(trail);
+        banner('START GEGLÜCKT!', 'cyan');
+        flash();
+        for (var i = 0; i < 3; i++) randomFirework();
+        every(randomFirework, 650);
+      }, 2600);
       return ['Wow, ' + name + '!', 'Du startest durch wie eine Rakete! 🚀'];
     },
-    // 4) Regenbogen
-    function (name) {
-      var box = add('c-rainbow');
-      var colors = ['#ff5e5e', '#ffa23a', '#ffe14d', '#4cd964', '#34aadc', '#a77bff'];
-      colors.forEach(function (c, i) {
-        var a = el('div', 'arc');
-        var off = i * 40;
-        a.style.left = off + 'px'; a.style.top = off + 'px';
-        a.style.width = a.style.height = (640 - off * 2) + 'px';
-        a.style.borderColor = c;
-        a.style.animationDelay = (i * 0.12) + 's';
-        box.appendChild(a);
-      });
-      var scale = Math.min(1, (W() - 40) / 640);
-      setTransform(box, 'scale(' + scale + ')');
-      add('c-rainbow-cloud', '☁️', { left: (W() / 2 - 320 * scale - 50) + 'px', top: (H() / 2 - 40) + 'px', animationDelay: '.8s' });
-      add('c-rainbow-cloud', '☁️', { left: (W() / 2 + 320 * scale - 70) + 'px', top: (H() / 2 - 40) + 'px', animationDelay: '1s' });
-      later(function () { twinkleStars(14); }, 900);
-      return ['Klasse, ' + name + '!', 'Ein Regenbogen nur für dich! 🌈'];
+
+    // 3) Combo-Zähler mit Blitzen
+    function (name, total) {
+      add('c-bolt', '⚡', { left: '6%', top: '22%' });
+      add('c-bolt', '⚡', { right: '6%', top: '22%', animationDelay: '.4s' });
+      var box = add('c-combo');
+      var num = el('span', 'num', '0');
+      box.appendChild(num);
+      box.appendChild(el('span', 'lbl', 'COMBO'));
+      var n = 0;
+      var step = Math.max(120, Math.round(1600 / Math.max(total, 1)));
+      var counter = every(function () {
+        n++;
+        num.textContent = 'x' + n;
+        num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop');
+        if (n >= total) {
+          clearInterval(counter);
+          later(function () {
+            flash(); shake();
+            banner('PERFEKT!', 'gold');
+            confettiBurst(70);
+            firework(W() / 2, centerY(), '#facc15', 30);
+          }, 300);
+        }
+      }, step);
+      return ['Wahnsinn, ' + name + '!', 'Alle ' + total + ' Aufgaben am Stück! ⚡'];
     },
-    // 5) Luftballons & Vögel
-    function (name) {
-      var balloons = ['🎈', '🎈', '🎈', '🎁', '🎈'];
-      for (var i = 0; i < 14; i++) {
-        add('c-balloon', pick(balloons), {
-          left: rand(0, W() - 80) + 'px',
-          animationDuration: rand(3.5, 6) + 's',
-          animationDelay: rand(0, 1.8) + 's'
-        });
-      }
-      for (var j = 0; j < 4; j++) {
-        add('c-bird', pick(['🐦', '🐤', '🕊️']), {
-          right: '-100px', top: rand(8, 45) + '%',
-          animationDuration: rand(4, 6.5) + 's',
-          animationDelay: rand(0, 2) + 's'
-        });
-      }
-      return ['Toll gemacht, ' + name + '!', 'Die Vögel singen für dich! 🎶'];
-    }
+
+    // 4) Münzregen mit Punktezähler
+    function (name, total) {
+      var points = total * 100;
+      var score = add('c-score');
+      score.appendChild(el('span', 'lbl', 'PUNKTE'));
+      var num = el('span', 'num', '0');
+      score.appendChild(num);
+      var shown = 0;
+      var count = every(function () {
+        shown = Math.min(points, shown + Math.ceil(points / 30));
+        num.textContent = shown;
+        if (shown >= points) {
+          clearInterval(count);
+          banner('JACKPOT!', 'gold');
+          flash(); shake();
+          firework(W() / 2, H() * 0.35, '#facc15', 30);
+        }
+      }, 60);
+      var rain = every(function () {
+        var dur = rand(1.8, 3.2);
+        var c = add('c-coin', '', { left: rand(0, W() - 64) + 'px', animationDuration: dur + 's' });
+        var face = el('div', '', '★');
+        face.style.animationDelay = (-rand(0, 0.7)) + 's';
+        c.appendChild(face);
+        removeLater(c, dur * 1000 + 100);
+      }, 140);
+      later(function () { clearInterval(rain); }, 6000);
+      return ['Jackpot, ' + name + '!', 'Du hast ' + points + ' Punkte geholt! 💰'];
+    },
+
+    // 5) Geheimnisvolle Sammelkarte
+    function (name, total) { return cardReveal(name, total, 'morning'); }
   ];
 
   var EVENING_ANIMS = [
-    // 1) Sternschnuppen
+    // 1) Mission erfüllt: Pokal, 3 Sterne
+    function (name, total) { return levelComplete(name, total, true); },
+
+    // 2) Warp-Flug zu einem Planeten
     function (name) {
-      twinkleStars(22);
-      var n = 0;
-      every(function () {
-        if (n++ > 14) return;
-        add('c-shoot', '', { left: rand(-100, W() * 0.6) + 'px', top: rand(0, H() * 0.45) + 'px' });
-      }, 380);
-      return ['Toll, ' + name + '!', 'Wünsch dir was – eine Sternschnuppe! 🌠'];
-    },
-    // 2) Die Eule gratuliert
-    function (name) {
-      twinkleStars(16);
-      add('c-bigmoon', '🌙');
-      add('c-owl', '🦉');
-      return ['Super, ' + name + '!', 'Die Eule ist stolz auf dich! 🦉'];
-    },
-    // 3) Schäfchen zählen
-    function (name) {
-      twinkleStars(12);
-      add('c-fence', '', {
-        width: '120px', height: '90px', marginLeft: '-60px',
-        background: 'repeating-linear-gradient(to right, #c9965c 0 16px, transparent 16px 34px)',
-        borderTop: '12px solid #b07a42', borderRadius: '6px'
-      });
-      for (var i = 0; i < 4; i++) {
-        add('c-sheep', '🐑', { animationDelay: (i * 0.9) + 's' });
+      var warpBox = add('c-warp');
+      for (var i = 0; i < 46; i++) {
+        var ray = add('c-warp-ray', '', null, warpBox);
+        setTransform(ray, 'rotate(' + Math.round(rand(0, 360)) + 'deg)');
+        var line = el('div');
+        line.style.animationDelay = (-rand(0, 0.9)).toFixed(2) + 's';
+        line.style.animationDuration = rand(0.6, 1.1).toFixed(2) + 's';
+        ray.appendChild(line);
       }
-      return ['Prima, ' + name + '!', 'Jetzt Schäfchen zählen … 1, 2, 3, 4 🐑'];
+      later(function () {
+        warpBox.style.opacity = '0';
+        removeLater(warpBox, 900);
+        flash();
+        twinkleStars(22);
+        var planet = add('c-planet');
+        planet.appendChild(el('div', 'ring'));
+        planet.appendChild(el('div', 'body'));
+        planet.appendChild(el('div', 'ring front'));
+        banner('ZIEL ERREICHT!', 'cyan');
+      }, 2600);
+      return ['Super, ' + name + '!', 'Mit Warp-Tempo ab ins Traumland! 🌌'];
     },
-    // 4) Glühwürmchen
+
+    // 3) Sternschnuppen-Regen
     function (name) {
-      add('c-bigmoon', '🌛');
+      twinkleStars(24);
+      banner('WÜNSCH DIR WAS!', 'violet');
+      every(function () {
+        var s = add('c-shoot', '', { left: rand(-100, W() * 0.6) + 'px', top: rand(0, H() * 0.45) + 'px' });
+        removeLater(s, 1400);
+      }, 420);
+      return ['Toll, ' + name + '!', 'So viele Sternschnuppen – nur für dich! 🌠'];
+    },
+
+    // 4) Nordlicht mit Glühwürmchen
+    function (name) {
+      add('c-aurora', '', { background: 'linear-gradient(to bottom, rgba(34,211,238,0), rgba(34,211,238,.45) 45%, rgba(34,211,238,0))' });
+      add('c-aurora', '', { top: '8%', background: 'linear-gradient(to bottom, rgba(163,230,53,0), rgba(163,230,53,.4) 50%, rgba(163,230,53,0))', animationDelay: '-2.5s', animationDuration: '9s' });
+      add('c-aurora', '', { top: '15%', background: 'linear-gradient(to bottom, rgba(192,132,252,0), rgba(192,132,252,.4) 50%, rgba(192,132,252,0))', animationDelay: '-5s', animationDuration: '8s' });
+      twinkleStars(14);
       var flies = [];
-      for (var i = 0; i < 28; i++) {
-        var f = add('c-firefly', '', { left: rand(0, W()) + 'px', top: rand(0, H()) + 'px', opacity: '.2' });
-        flies.push(f);
+      for (var i = 0; i < 24; i++) {
+        flies.push(add('c-firefly', '', { left: rand(0, W()) + 'px', top: rand(H() * 0.3, H()) + 'px', opacity: '.2' }));
       }
       function moveFlies() {
         flies.forEach(function (f) {
@@ -1055,18 +1247,21 @@
       }
       later(moveFlies, 50);
       every(moveFlies, 2200);
-      return ['Wunderbar, ' + name + '!', 'Die Glühwürmchen tanzen für dich ✨'];
+      return ['Wunderbar, ' + name + '!', 'Das Nordlicht tanzt für dich ✨'];
     },
-    // 5) Der Mond wird müde
-    function (name) {
-      twinkleStars(18);
-      add('c-moonface', '🌜');
-      every(function () {
-        add('c-z', 'Z', { left: (W() / 2 + 60) + 'px', top: (H() / 2 - 150) + 'px', fontSize: Math.round(rand(30, 60)) + 'px' });
-      }, 600);
-      return ['Gut gemacht, ' + name + '!', 'Schlaf schön und träum was Süßes 💤'];
-    }
+
+    // 5) Geheimnisvolle Sammelkarte (Nacht-Tiere)
+    function (name, total) { return cardReveal(name, total, 'evening'); }
   ];
+
+  function showMsg(title, sub) {
+    var m = $('celebrateMsg');
+    m.innerHTML = '';
+    m.appendChild(document.createTextNode(title));
+    m.appendChild(el('small', '', sub));
+    // Animation der Nachricht neu starten
+    m.style.animation = 'none'; void m.offsetWidth; m.style.animation = '';
+  }
 
   function celebrate() {
     var routine = state.current.routine;
@@ -1077,26 +1272,27 @@
 
     closeCelebrate();
     celebrateBox.className = 'celebrate open ' + routine;
-    var msg = anims[idx](kidName());
-    var m = $('celebrateMsg');
-    m.innerHTML = '';
-    m.appendChild(document.createTextNode(msg[0]));
-    m.appendChild(el('small', '', msg[1]));
-    // Animation der Nachricht neu starten
-    m.style.animation = 'none'; void m.offsetWidth; m.style.animation = '';
+    var next = $('celebrateNext');
+    next.style.animation = 'none'; void next.offsetWidth; next.style.animation = '';
+    var msg = anims[idx](kidName(), progress().total);
+    showMsg(msg[0], msg[1]);
     celebrateOpenedAt = Date.now();
-    later(closeCelebrate, 7500);
+    later(stopLoops, LOOP_LIMIT);
   }
 
   function closeCelebrate() {
-    celebrateTimers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
+    celebrateTimers.forEach(function (t) { clearTimeout(t); });
     celebrateTimers = [];
+    stopLoops();
     stage.innerHTML = '';
+    stage.className = 'celebrate-stage';
     celebrateBox.className = 'celebrate';
   }
 
+  // Schließen nur durch Tippen – kurz gesperrt, damit ein schneller
+  // Doppeltipp auf die letzte Kachel die Belohnung nicht gleich wegklickt
   celebrateBox.addEventListener('click', function () {
-    if (Date.now() - celebrateOpenedAt > 1200) closeCelebrate();
+    if (Date.now() - celebrateOpenedAt > CLOSE_DELAY) closeCelebrate();
   });
 
   /* ------------------------------- Uhr ------------------------------- */
