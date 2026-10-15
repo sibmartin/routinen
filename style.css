@@ -18,7 +18,7 @@
   --pink: #f472b6;
   --cyan: #22d3ee;
   --violet: #a855f7;
-  --morning-bottom: #14072e;
+  --morning-bottom: #fdba74;
   --evening-bottom: #241052;
 }
 
@@ -35,7 +35,7 @@ html, body {
 /* Grundfläche hinter allem: Füllt auf dem iPad auch Bereiche, die der fest
    positionierte App-Bereich nicht erreicht (sonst entsteht unten ein Balken).
    Farbe = unterer Rand der jeweiligen Szene. */
-html { background: #14072e; transition: background-color .8s ease; }
+html { background: #fdba74; transition: background-color .8s ease; }
 html.evening { background: #241052; }
 
 body {
@@ -64,13 +64,14 @@ button {
 body.morning .scene-morning,
 body.evening .scene-evening { opacity: 1; }
 
-/* Morgen: Himmel im Sonnenaufgang, Horizont bei 68 % */
-.scene-morning { background: linear-gradient(to bottom, #1b0f4d 0%, #4b1d9e 38%, #c13584 60%, #ff7a59 68%, #14072e 68%); }
+/* Morgen: heller Tageshimmel, Horizont bei 68 % */
+.scene-morning { background: linear-gradient(to bottom, #38bdf8 0%, #7dd3fc 30%, #bae6fd 50%, #fef3c7 63%, #fde68a 68%); }
 
 .synth-sun {
   position: absolute; left: 50%; bottom: 32%;
   width: 340px; height: 340px; margin: 0 0 -170px -170px; border-radius: 50%;
-  background: linear-gradient(to bottom, #fff36b 0%, #ffb347 40%, #ff4f8b 100%);
+  background: linear-gradient(to bottom, #fffbeb 0%, #fde047 45%, #fb923c 100%);
+  box-shadow: 0 0 60px rgba(253, 224, 71, .7);
   /* Streifen wie bei einer Retro-Sonne (ohne Unterstützung: volle Sonne) */
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 50%, transparent 50%, transparent 54%, #000 54%, #000 61%,
     transparent 61%, transparent 66%, #000 66%, #000 72%, transparent 72%, transparent 78%, #000 78%, #000 83%,
@@ -82,16 +83,29 @@ body.evening .scene-evening { opacity: 1; }
 .sun-glow {
   position: absolute; left: 50%; bottom: 32%;
   width: 760px; height: 760px; margin: 0 0 -380px -380px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 140, 90, .55) 0%, rgba(255, 79, 139, .2) 40%, rgba(255, 79, 139, 0) 70%);
+  background: radial-gradient(circle, rgba(255, 247, 200, .9) 0%, rgba(253, 224, 71, .35) 40%, rgba(253, 224, 71, 0) 70%);
   animation: glowPulse 5s ease-in-out infinite alternate;
 }
 
-/* Neon-Gitter als Boden, läuft langsam auf einen zu */
+/* Wolken ziehen langsam von links nach rechts über den Himmel */
+.cloud {
+  position: absolute; left: 0; width: 180px; height: 56px; border-radius: 56px;
+  background: #fff; opacity: .9;
+  animation: drift 70s linear infinite;
+}
+.cloud:before, .cloud:after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+.cloud:before { width: 80px; height: 80px; left: 28px; top: -40px; }
+.cloud:after  { width: 100px; height: 100px; left: 70px; top: -56px; }
+.cloud-1 { top: 16%; animation-delay: -10s; }
+.cloud-2 { top: 34%; opacity: .75; animation-duration: 95s; animation-delay: -60s; }
+.cloud-3 { top: 8%; opacity: .6; animation-duration: 120s; animation-delay: -35s; }
+
+/* Gitter als Boden, läuft langsam auf einen zu */
 .floor {
   position: absolute; left: 0; right: 0; bottom: 0; height: 32%; overflow: hidden;
-  background: linear-gradient(to bottom, #2a0d55, #14072e);
-  border-top: 3px solid #ff4fd8;
-  box-shadow: 0 0 30px 6px rgba(255, 79, 216, .6);
+  background: linear-gradient(to bottom, #fde68a, #fdba74);
+  border-top: 3px solid #fb923c;
+  box-shadow: 0 0 30px 6px rgba(251, 146, 60, .45);
 }
 .floor-grid {
   /* Feste Höhe: so bleibt die gekippte Fläche vor der "Kamera" (perspective) */
@@ -103,12 +117,12 @@ body.evening .scene-evening { opacity: 1; }
 .floor-lines {
   position: absolute; top: -80px; left: 0; right: 0; bottom: 0;
   background-image:
-    repeating-linear-gradient(to right, rgba(255, 79, 216, .7) 0, rgba(255, 79, 216, .7) 3px, transparent 3px, transparent 80px),
-    repeating-linear-gradient(to bottom, rgba(255, 79, 216, .7) 0, rgba(255, 79, 216, .7) 3px, transparent 3px, transparent 80px);
+    repeating-linear-gradient(to right, rgba(234, 88, 12, .4) 0, rgba(234, 88, 12, .4) 3px, transparent 3px, transparent 80px),
+    repeating-linear-gradient(to bottom, rgba(234, 88, 12, .4) 0, rgba(234, 88, 12, .4) 3px, transparent 3px, transparent 80px);
   animation: gridRun 2.4s linear infinite;
 }
 
-/* Sterne (Abend, am Morgen nur blass oben am Himmel) */
+/* Sterne (Abend) */
 .stars {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   background-image:
@@ -123,7 +137,6 @@ body.evening .scene-evening { opacity: 1; }
   animation: twinkle 4s ease-in-out infinite alternate;
 }
 .stars-2 { background-size: 300px 220px; background-position: 90px 60px; animation-duration: 6s; animation-delay: -3s; }
-.stars.dawn { bottom: 50%; opacity: .5; }
 
 /* Abend: Weltraum */
 .scene-evening { background: linear-gradient(to bottom, #03030f 0%, #120a35 55%, #241052 100%); }
@@ -522,6 +535,41 @@ body.evening .scene-evening { opacity: 1; }
 .kid-btn, .routine-btn, .clock-digits { white-space: nowrap; }
 .kid-btn .name { display: inline-block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
 
+/* ================= Morgen: helles Design mit dunkler Schrift =================
+   Gilt nur für den Hauptbildschirm (.app). Dialoge, Hinweise und Belohnung
+   liegen außerhalb und bleiben dunkel. */
+
+body.morning .app {
+  --ink: #1e293b;
+  --ink-dim: rgba(30, 41, 59, .72);
+  --ink-faint: rgba(30, 41, 59, .5);
+  --glass: rgba(255, 255, 255, .72);
+  --line: rgba(255, 255, 255, .95);
+  color: var(--ink);
+}
+body.morning .kid-btn, body.morning .clock, body.morning .routine-switch,
+body.morning .gear, body.morning .reset-btn, body.morning .progress {
+  box-shadow: 0 5px 0 rgba(180, 83, 9, .18);
+}
+body.morning .kid-btn .avatar { background: rgba(30, 41, 59, .08); }
+
+body.morning .cf-bg { fill: #fff; stroke: #fb923c; }
+body.morning .cf-ticks circle { fill: rgba(30, 41, 59, .3); }
+body.morning .cf-ticks circle.big { fill: #1e293b; }
+body.morning .cf-h, body.morning .cf-m { stroke: #1e293b; }
+body.morning .clock-digits { color: #1e293b; text-shadow: none; }
+
+body.morning .progress .seg { background: rgba(30, 41, 59, .1); }
+body.morning .progress-text { color: #1e293b; text-shadow: none; }
+
+body.morning .tile {
+  color: var(--ink);
+  background: linear-gradient(160deg, #fff, rgba(255, 255, 255, .82) 60%);
+  box-shadow: 0 6px 0 rgba(180, 83, 9, .22), 0 0 22px var(--cg, rgba(0, 0, 0, 0)), inset 0 1px 0 #fff;
+}
+body.morning .tile .label { text-shadow: none; }
+body.morning .tile.done { box-shadow: 0 6px 0 #15803d, 0 0 28px rgba(163, 230, 53, .55); }
+
 /* Kleinere Bildschirme / Hochformat */
 @media (max-width: 1100px) {
   .kid-btn { height: 62px; padding: 0 18px 0 6px; margin-right: 8px; font-size: 22px; }
@@ -746,6 +794,7 @@ body.evening .scene-evening { opacity: 1; }
 @keyframes hover   { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 @keyframes shoot   { 0%, 80% { opacity: 0; transform: translate(0,0) rotate(20deg); } 83% { opacity: 1; } 95% { opacity: 0; transform: translate(500px, 180px) rotate(20deg); } 100% { opacity: 0; } }
 @keyframes kidFloat { from { margin-top: -10px; } to { margin-top: 10px; } }
+@keyframes drift   { from { transform: translateX(-260px); } to { transform: translateX(110vw); } }
 
 @keyframes pop     { 0% { transform: scale(1); } 30% { transform: scale(.88); } 60% { transform: scale(1.07); } 100% { transform: scale(1); } }
 @keyframes checkIn { 0% { transform: scale(0) rotate(-90deg); } 100% { transform: scale(1) rotate(0); } }

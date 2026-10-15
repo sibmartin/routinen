@@ -512,8 +512,8 @@
     document.body.className = routine;
     document.documentElement.className = routine;
     var meta = document.querySelector('meta[name="theme-color"]');
-    // iOS 26 füllt den Bereich um den Home-Balken mit der Theme-Farbe → Farbe des unteren Randes (Neon-Boden/Weltraum)
-    if (meta) meta.setAttribute('content', routine === 'morning' ? '#14072e' : '#241052');
+    // iOS 26 füllt den Bereich um den Home-Balken mit der Theme-Farbe → Farbe des unteren Randes (Gitter-Boden/Weltraum)
+    if (meta) meta.setAttribute('content', routine === 'morning' ? '#fdba74' : '#241052');
 
     renderKidTheme();
     renderKids();
