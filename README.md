@@ -23,7 +23,7 @@ Ein Service Worker funktioniert nur über **HTTPS**. Die Dateien müssen daher e
 - Für den Offline-Betrieb ist **iOS 11.3 oder neuer** nötig. Das gilt z. B. für iPad Air 1 und iPad mini 2 (bis iOS 12.5). Auf älteren Geräten läuft die App, braucht aber Internet.
 
 ## iPhone und andere Bildschirmgrößen
-Die App passt sich an iPad und iPhone an, im Hoch- wie im Querformat. Passt die obere Leiste nicht in eine Zeile, werden zuerst die Wörter „Morgen“/„Abend“ ausgeblendet (nur ☀️/🌙), dann die Uhr. Reicht das nicht (z. B. iPhone hochkant), wird die Leiste zweizeilig: oben die Kinder, darunter Uhr, Morgen/Abend und ⚙️. Auf kleinen Bildschirmen werden Kachel-Symbole kleiner, damit die Beschriftung ganz zu sehen ist. Die Einstellungen füllen auf dem Handy den ganzen Bildschirm.
+Die App passt sich an iPad und iPhone an, im Hoch- wie im Querformat. Passt die obere Leiste nicht in eine Zeile, werden zuerst die Wörter „Morgen“/„Abend“ ausgeblendet (nur ☀️/🌙), dann die Uhr. Reicht das nicht (z. B. iPhone hochkant), wird die Leiste zweizeilig: oben die Kinder, darunter Uhr, Morgen/Abend und ⚙️. Auf kleinen Bildschirmen werden Kachel-Symbole kleiner, damit die Beschriftung ganz zu sehen ist. Die Einstellungen füllen auf dem Handy den ganzen Bildschirm. Auf iOS 26 gehört der Streifen um den Home-Balken nicht zur Webseite; iOS füllt ihn mit der Theme-Farbe. Die App setzt dafür die Farbe des aktiven Kindes, so wirkt der Streifen wie ein Teil des Rahmens.
 
 ## Bedienung
 - **Kind wählen:** oben links. Die Namen werden im ⚙️-Menü eingetragen und nur auf dem iPad gespeichert, nicht im Code.

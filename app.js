@@ -516,9 +516,6 @@
     var routine = state.current.routine;
     document.body.className = routine;
     document.documentElement.className = routine;
-    var meta = document.querySelector('meta[name="theme-color"]');
-    // iOS 26 füllt den Bereich um den Home-Balken mit der Theme-Farbe → Farbe des unteren Randes (Gitter-Boden/Weltraum)
-    if (meta) meta.setAttribute('content', routine === 'morning' ? '#fdba74' : '#241052');
 
     renderKidTheme();
     renderKids();
@@ -539,7 +536,13 @@
   var topbar = document.querySelector('.topbar');
 
   function topbarOverflows() {
-    if (topbar.scrollWidth > topbar.clientWidth + 1) return true;
+    // Layout-Maße statt scrollWidth: Die Vergrößerung des aktiven Kind-Knopfs (scale)
+    // soll nicht als Überstand zählen
+    var right = topbar.offsetLeft + topbar.clientWidth + 1;
+    var items = [].slice.call(topbar.children).concat([].slice.call($('kids').children));
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].offsetWidth && items[i].offsetLeft + items[i].offsetWidth > right) return true;
+    }
     // Zweizeilig: Uhr (falls sichtbar), Morgen/Abend und Zahnrad müssen in derselben Zeile stehen
     if (!appBox.classList.contains('stack')) return false;
     var clock = $('clock'), sw = $('routineSwitch');
@@ -609,6 +612,11 @@
     // Außen: breiter Rahmen in der Farbe des Kindes; innen: helle Kante und Leuchten
     frame.style.boxShadow = '0 0 0 120px ' + ks.color + ', inset 0 0 0 2px rgba(255,255,255,.6)' +
       ', inset 0 0 26px ' + hexToRgba(ks.color, 0.7) + ', inset 0 0 90px ' + hexToRgba(ks.color, 0.3);
+    // iOS 26 füllt den Streifen um den Home-Balken mit Theme- bzw. Hintergrundfarbe →
+    // Farbe des Kindes, damit er wie ein Teil des Rahmens aussieht
+    document.documentElement.style.backgroundColor = ks.color;
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', ks.color);
     var sides = $('kidFramePat').children;
     for (var i = 0; i < sides.length; i++) sides[i].className = ['t', 'b', 'l', 'r'][i] + pat;
 
@@ -728,12 +736,14 @@
   /* Auf kleinen Bildschirmen: Symbol verkleinern, bis die Beschriftung ganz hineinpasst */
   function fitTileContent(t, th, iconSize) {
     var icon = t.querySelector('.icon'), label = t.querySelector('.label');
-    // Zu lange Wörter (z. B. „Mama/Papa-Zeit“) erst schmaler setzen
+    // Zu lange Wörter (z. B. „Spülmaschine“) erst kleiner setzen, nur notfalls trennen
+    label.classList.remove('hyph');
     var ls = parseFloat(label.style.fontSize);
     while (ls > 12 && label.scrollWidth > t.clientWidth - 12) {
       ls--;
       label.style.fontSize = ls + 'px';
     }
+    if (label.scrollWidth > t.clientWidth - 12) label.classList.add('hyph');
     var room = th - 16; // Innenabstand und Rahmen
     while (iconSize > 18 && icon.offsetHeight + label.offsetHeight + 4 > room) {
       iconSize = Math.round(iconSize * 0.88);

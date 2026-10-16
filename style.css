@@ -34,11 +34,11 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Grundfläche hinter allem: Füllt auf dem iPad auch Bereiche, die der fest
-   positionierte App-Bereich nicht erreicht (sonst entsteht unten ein Balken).
-   Farbe = unterer Rand der jeweiligen Szene. */
-html { background: #fdba74; transition: background-color .8s ease; }
-html.evening { background: #241052; }
+/* Grundfläche hinter allem: Füllt Bereiche, die der fest positionierte
+   App-Bereich nicht erreicht (auf iOS 26 der Streifen um den Home-Balken).
+   Farbe = Farbe des aktiven Kindes (per JS), so wirkt der Streifen wie ein
+   Teil des Rahmens. */
+html { background: #ff8a5b; transition: background-color .5s ease; }
 
 body {
   font-family: ui-rounded, "SF Pro Rounded", "Avenir Next", Avenir, "Helvetica Neue", Arial, sans-serif;
@@ -365,8 +365,11 @@ body.evening .scene-evening { opacity: 1; }
 .tile .label {
   text-align: center; line-height: 1.15; margin-top: 4px;
   text-shadow: 0 2px 0 rgba(0, 0, 0, .35);
-  word-wrap: break-word; -webkit-hyphens: auto; hyphens: auto;
+  /* Keine automatische Silbentrennung: zu lange Wörter setzt app.js kleiner,
+     erst wenn das nicht reicht, wird getrennt (Klasse hyph) */
+  -webkit-hyphens: manual; hyphens: manual;
 }
+.tile .label.hyph { word-wrap: break-word; -webkit-hyphens: auto; hyphens: auto; }
 .tile.done .label { color: #fff; text-shadow: 0 2px 0 rgba(20, 83, 45, .6); }
 
 .tile .check {
