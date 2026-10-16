@@ -521,7 +521,28 @@
     for (var i = 0; i < btns.length; i++) {
       btns[i].classList.toggle('active', btns[i].getAttribute('data-routine') === routine);
     }
+    fitTopbar();
     renderGrid();
+  }
+
+  /* Obere Leiste an die Bildschirmbreite anpassen: Stufen nacheinander
+     probieren, bis nichts mehr übersteht (z. B. auf dem iPhone sonst
+     Morgen/Abend und Zahnrad außerhalb des Bildschirms). Siehe style.css. */
+  var TOPBAR_STEPS = ['', 'fit-1', 'fit-1 fit-2', 'stack', 'stack fit-1', 'stack fit-1 fit-2'];
+  var appBox = document.querySelector('.app');
+  var topbar = document.querySelector('.topbar');
+
+  function topbarOverflows() {
+    if (topbar.scrollWidth > topbar.clientWidth + 1) return true;
+    // Zweizeilig: Uhr und Morgen/Abend müssen in derselben Zeile stehen
+    return appBox.classList.contains('stack') && $('routineSwitch').offsetTop !== $('clock').offsetTop;
+  }
+
+  function fitTopbar() {
+    for (var i = 0; i < TOPBAR_STEPS.length; i++) {
+      appBox.className = 'app' + (TOPBAR_STEPS[i] ? ' ' + TOPBAR_STEPS[i] : '');
+      if (!topbarOverflows()) return;
+    }
   }
 
   function renderKids() {
@@ -571,8 +592,9 @@
     var ks = kidState();
     var key = state.current.kid + ks.avatar + ks.color;
     var frame = $('kidFrame');
-    frame.style.boxShadow = 'inset 0 0 0 5px ' + ks.color + ', inset 0 0 30px ' + hexToRgba(ks.color, 0.6) +
-      ', inset 0 0 120px ' + hexToRgba(ks.color, 0.3);
+    // Außen: breiter Rahmen in der Farbe des Kindes; innen: helle Kante und Leuchten
+    frame.style.boxShadow = '0 0 0 120px ' + ks.color + ', inset 0 0 0 2px rgba(255,255,255,.6)' +
+      ', inset 0 0 26px ' + hexToRgba(ks.color, 0.7) + ', inset 0 0 90px ' + hexToRgba(ks.color, 0.3);
     if (key === lastThemeKey) return;
     var first = lastThemeKey === '';
     lastThemeKey = key;
@@ -649,7 +671,8 @@
     var tiles = grid.querySelectorAll('.tile');
     var n = tiles.length;
     if (!n) return;
-    var W = grid.clientWidth, H = grid.clientHeight, M = 16;
+    var W = grid.clientWidth, H = grid.clientHeight;
+    var M = 2 * (parseFloat(window.getComputedStyle(tiles[0]).marginLeft) || 8);
     var best = null;
     for (var cols = 1; cols <= n; cols++) {
       var rows = Math.ceil(n / cols);
@@ -911,6 +934,7 @@
     save();
     $('settingsTitle').textContent = '⚙️ Einstellungen für ' + kidName();
     renderKids();
+    fitTopbar();
   });
   $('nameInput').addEventListener('keydown', function (e) {
     if (e.keyCode === 13) this.blur(); // "Fertig" auf der Tastatur schließt sie
@@ -962,12 +986,16 @@
       ap.appendChild(b);
     });
 
-    // Farbe
+    // Farbe (die Farbe des Geschwisterkindes ist gesperrt, damit man die Kinder nicht verwechselt)
+    var other = null;
+    KIDS.forEach(function (k) { if (k.id !== state.current.kid) other = state.kids[k.id]; });
     var cp = $('colorPicker');
     cp.innerHTML = '';
     KID_COLORS.forEach(function (c) {
-      var b = el('button', c === ks.color ? 'active' : '');
+      var taken = other && other.color === c && c !== ks.color;
+      var b = el('button', c === ks.color ? 'active' : (taken ? 'taken' : ''), taken ? other.avatar : '');
       b.style.backgroundColor = c;
+      if (taken) { b.disabled = true; cp.appendChild(b); return; }
       b.addEventListener('click', function () {
         ks.color = c;
         save();
@@ -1356,9 +1384,11 @@
   var resizeTimer;
   window.addEventListener('resize', function () {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(layoutGrid, 150);
+    resizeTimer = setTimeout(function () { fitTopbar(); layoutGrid(); }, 150);
   });
-  window.addEventListener('orientationchange', function () { setTimeout(layoutGrid, 300); });
+  window.addEventListener('orientationchange', function () { setTimeout(function () { fitTopbar(); layoutGrid(); }, 300); });
+  // Nach dem Laden der Schriften (Emojis) können sich die Breiten noch ändern
+  window.addEventListener('load', function () { fitTopbar(); layoutGrid(); });
 
   // Doppeltipp-Zoom auf altem iOS verhindern (nur bei zweitem Tipp aufs selbe Element,
   // damit schnelles Antippen verschiedener Kacheln weiter funktioniert)

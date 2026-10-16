@@ -4,7 +4,7 @@
 | Datei | Zweck |
 |---|---|
 | `index.html` | App-Gerüst, iOS-Meta-Tags für den Home-Bildschirm |
-| `style.css` | Design im Gaming-Look, Hintergründe (Neon-Sonnenaufgang bzw. Weltraum), Animationen |
+| `style.css` | Design im Gaming-Look, Hintergründe (Tageshimmel bzw. Weltraum), Anpassung an iPad/iPhone, Animationen |
 | `app.js` | Logik: Kacheln, Speichern, Einstellungen, Belohnungs-Animationen |
 | `sw.js` | Service Worker, speichert alle Dateien für den Offline-Betrieb |
 | `manifest.json` | Web-App-Manifest |
@@ -22,8 +22,12 @@ Ein Service Worker funktioniert nur über **HTTPS**. Die Dateien müssen daher e
 - Kacheln erst **in der Home-Bildschirm-App** einstellen. iOS speichert die Daten der Home-Bildschirm-App getrennt von Safari.
 - Für den Offline-Betrieb ist **iOS 11.3 oder neuer** nötig. Das gilt z. B. für iPad Air 1 und iPad mini 2 (bis iOS 12.5). Auf älteren Geräten läuft die App, braucht aber Internet.
 
+## iPhone und andere Bildschirmgrößen
+Die App passt sich an iPad und iPhone an, im Hoch- wie im Querformat. Passt die obere Leiste nicht in eine Zeile, werden zuerst die Uhrziffern und die Wörter „Morgen“/„Abend“ ausgeblendet. Reicht das nicht (z. B. iPhone hochkant), wird die Leiste zweizeilig: oben die Kinder und das ⚙️, darunter Uhr und Morgen/Abend. Die Einstellungen füllen auf dem Handy den ganzen Bildschirm.
+
 ## Bedienung
 - **Kind wählen:** oben links. Die Namen werden im ⚙️-Menü eingetragen und nur auf dem iPad gespeichert, nicht im Code.
+- **Welches Kind ist dran?** Ein breiter Rahmen in der Farbe des Kindes läuft um den ganzen Bildschirm, dazu schwebt sein Tierbild im Hintergrund. Das andere Kind ist oben grau dargestellt. Jedes Kind hat eine eigene Farbe: Die Farbe des Geschwisterkindes ist im ⚙️-Menü gesperrt.
 - **Routine wählen:** ☀️ Morgen / 🌙 Abend. Der Fortschritt bleibt beim Umschalten erhalten.
 - **Kachel antippen:** Sie wird grün, ein „+1“ steigt auf und die Energie-Leiste oben füllt sich. Nochmal antippen macht es rückgängig.
 - **Alle Kacheln erledigt:** Eine zufällige Belohnungs-Animation erscheint (je 5 für morgens und abends: Pokal mit 3 Sternen, Feuerwerk, Konfetti-Party, Luftballons, Goldmedaille bzw. abends Sternschnuppen und Nordlicht). Sie bleibt stehen, bis das Kind auf **Weiter** oder irgendwo auf den Bildschirm tippt.
