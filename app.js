@@ -533,14 +533,22 @@
   /* Obere Leiste an die Bildschirmbreite anpassen: Stufen nacheinander
      probieren, bis nichts mehr übersteht (z. B. auf dem iPhone sonst
      Morgen/Abend und Zahnrad außerhalb des Bildschirms). Siehe style.css. */
-  var TOPBAR_STEPS = ['', 'fit-1', 'fit-1 fit-2', 'stack', 'stack fit-1', 'stack fit-1 fit-2'];
+  // Lieber Uhrzeit behalten und Morgen/Abend nur als Symbol zeigen, als die Uhr wegzulassen
+  var TOPBAR_STEPS = ['', 'fit-2', 'fit-1', 'fit-1 fit-2', 'stack', 'stack fit-2', 'stack fit-1', 'stack fit-1 fit-2'];
   var appBox = document.querySelector('.app');
   var topbar = document.querySelector('.topbar');
 
   function topbarOverflows() {
     if (topbar.scrollWidth > topbar.clientWidth + 1) return true;
-    // Zweizeilig: Uhr und Morgen/Abend müssen in derselben Zeile stehen
-    return appBox.classList.contains('stack') && $('routineSwitch').offsetTop !== $('clock').offsetTop;
+    // Zweizeilig: Uhr (falls sichtbar), Morgen/Abend und Zahnrad müssen in derselben Zeile stehen
+    if (!appBox.classList.contains('stack')) return false;
+    var clock = $('clock'), sw = $('routineSwitch');
+    return (clock.offsetWidth > 0 && !sameRow(sw, clock)) || !sameRow(sw, $('gearBtn'));
+  }
+
+  // Zwei Elemente überlappen sich senkrecht → sie stehen in derselben Zeile
+  function sameRow(a, b) {
+    return a.offsetTop < b.offsetTop + b.offsetHeight && b.offsetTop < a.offsetTop + a.offsetHeight;
   }
 
   function fitTopbar() {
@@ -610,7 +618,9 @@
     tag.style.backgroundColor = ks.color;
     tag.innerHTML = '';
     tag.appendChild(el('span', 'av', ks.avatar));
-    tag.appendChild(el('span', 'nm', kidName() + ' ist dran'));
+    var nm = el('span', 'nm', kidName());
+    nm.appendChild(el('span', 'dran', ' ist dran'));
+    tag.appendChild(nm);
     if (key === lastThemeKey) return;
     var first = lastThemeKey === '';
     lastThemeKey = key;
@@ -711,6 +721,23 @@
       var cs = Math.round(Math.max(30, Math.min(46, th * 0.22)));
       c.style.width = c.style.height = c.style.lineHeight = cs + 'px';
       c.style.fontSize = Math.round(cs * 0.65) + 'px';
+      fitTileContent(t, th, iconSize);
+    }
+  }
+
+  /* Auf kleinen Bildschirmen: Symbol verkleinern, bis die Beschriftung ganz hineinpasst */
+  function fitTileContent(t, th, iconSize) {
+    var icon = t.querySelector('.icon'), label = t.querySelector('.label');
+    // Zu lange Wörter (z. B. „Mama/Papa-Zeit“) erst schmaler setzen
+    var ls = parseFloat(label.style.fontSize);
+    while (ls > 12 && label.scrollWidth > t.clientWidth - 12) {
+      ls--;
+      label.style.fontSize = ls + 'px';
+    }
+    var room = th - 16; // Innenabstand und Rahmen
+    while (iconSize > 18 && icon.offsetHeight + label.offsetHeight + 4 > room) {
+      iconSize = Math.round(iconSize * 0.88);
+      icon.style.fontSize = iconSize + 'px';
     }
   }
 
@@ -1438,9 +1465,24 @@
   // Offline-Fähigkeit
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js').catch(function (err) {
+      navigator.serviceWorker.register('sw.js').then(function (reg) {
+        // Beim Zurückkehren in die App nach Updates suchen (iOS startet Home-Bildschirm-Apps
+        // oft nicht neu, sondern holt sie nur aus dem Hintergrund)
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden && reg.update) reg.update();
+        });
+      }).catch(function (err) {
         if (window.console) console.warn('Service Worker nicht registriert', err);
       });
+    });
+    // Neue Version installiert → einmal neu laden, damit sie sofort sichtbar ist
+    // (nicht beim allerersten Start, da gab es vorher keine Version)
+    var hadController = !!navigator.serviceWorker.controller;
+    var reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadController || reloaded) return;
+      reloaded = true;
+      window.location.reload();
     });
   }
   // Browser bitten, die Daten dauerhaft zu behalten

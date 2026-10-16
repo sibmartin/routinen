@@ -23,7 +23,7 @@ Ein Service Worker funktioniert nur über **HTTPS**. Die Dateien müssen daher e
 - Für den Offline-Betrieb ist **iOS 11.3 oder neuer** nötig. Das gilt z. B. für iPad Air 1 und iPad mini 2 (bis iOS 12.5). Auf älteren Geräten läuft die App, braucht aber Internet.
 
 ## iPhone und andere Bildschirmgrößen
-Die App passt sich an iPad und iPhone an, im Hoch- wie im Querformat. Passt die obere Leiste nicht in eine Zeile, werden zuerst die Uhrziffern und die Wörter „Morgen“/„Abend“ ausgeblendet. Reicht das nicht (z. B. iPhone hochkant), wird die Leiste zweizeilig: oben die Kinder und das ⚙️, darunter Uhr und Morgen/Abend. Die Einstellungen füllen auf dem Handy den ganzen Bildschirm.
+Die App passt sich an iPad und iPhone an, im Hoch- wie im Querformat. Passt die obere Leiste nicht in eine Zeile, werden zuerst die Wörter „Morgen“/„Abend“ ausgeblendet (nur ☀️/🌙), dann die Uhr. Reicht das nicht (z. B. iPhone hochkant), wird die Leiste zweizeilig: oben die Kinder, darunter Uhr, Morgen/Abend und ⚙️. Auf kleinen Bildschirmen werden Kachel-Symbole kleiner, damit die Beschriftung ganz zu sehen ist. Die Einstellungen füllen auf dem Handy den ganzen Bildschirm.
 
 ## Bedienung
 - **Kind wählen:** oben links. Die Namen werden im ⚙️-Menü eingetragen und nur auf dem iPad gespeichert, nicht im Code.
@@ -37,4 +37,4 @@ Die App passt sich an iPad und iPhone an, im Hoch- wie im Querformat. Passt die 
 - **⚙️ Zahnrad:** Einstellungen für das aktuelle Kind. Dort lassen sich Name, Bild, Farbe und Muster festlegen sowie Kacheln für morgens und abends hinzufügen, entfernen oder sortieren (max. 12).
 
 ## Änderungen später ausrollen
-Nach Änderungen an den Dateien in `sw.js` die Versionsnummer erhöhen (`routine-app-v1` → `v2`). So lädt das iPad beim nächsten Start mit Internet die neue Version. Gespeicherte Einstellungen und Fortschritte bleiben erhalten.
+Nach Änderungen an den Dateien in `sw.js` die Versionsnummer erhöhen (`routine-app-v1` → `v2`). Die App sucht beim Start und beim Zurückholen aus dem Hintergrund nach Updates und lädt sich nach einem Update einmal von selbst neu. Die installierte Version steht ganz unten im ⚙️-Menü. Gespeicherte Einstellungen und Fortschritte bleiben erhalten.

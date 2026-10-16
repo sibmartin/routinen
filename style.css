@@ -489,8 +489,8 @@ body.evening .scene-evening { opacity: 1; }
 }
 
 .app-version {
-  position: absolute; right: 14px; bottom: 6px;
-  font-size: 11px; color: var(--ink-faint); pointer-events: none;
+  margin-top: 22px; text-align: center;
+  font-size: 15px; color: var(--ink-dim);
 }
 
 .name-input {
@@ -650,6 +650,7 @@ body.morning .tile.done { box-shadow: 0 6px 0 #15803d, 0 0 28px rgba(163, 230, 5
   .reset-btn .short { display: inline; }
   .kid-tag { height: 40px; padding: 0 14px 0 4px; font-size: 17px; }
   .kid-tag .av { width: 30px; height: 30px; line-height: 30px; font-size: 20px; }
+  .kid-tag .dran { display: none; }
   .patterns button { width: 46px; height: 46px; margin: 0 8px 6px 0; }
   .toast { font-size: 18px; padding: 10px 16px; }
   .kid-splash .av { width: 150px; height: 150px; line-height: 142px; font-size: 96px; }
@@ -657,23 +658,21 @@ body.morning .tile.done { box-shadow: 0 6px 0 #15803d, 0 0 28px rgba(163, 230, 5
 }
 
 /* Obere Leiste: Stufen, die app.js nacheinander probiert, bis alles hineinpasst
-   (fit-1: Uhr ohne Ziffern, fit-2: Morgen/Abend nur als Symbol,
-    stack: zweizeilig – oben die Kinder, darunter Uhr und Morgen/Abend) */
-.app.fit-1 .clock-digits { display: none; }
-.app.fit-1 .clock-face { margin-right: 0; }
-.app.fit-1 .clock { padding-right: 6px; }
+   (fit-1: keine Uhr, fit-2: Morgen/Abend nur als Symbol,
+    stack: zweizeilig – oben die Kinder, darunter Uhr, Morgen/Abend und Zahnrad) */
+.app.fit-1 .clock { display: none; }
 .app.fit-2 .routine-btn .txt { display: none; }
 .app.fit-2 .routine-btn .ico { margin-right: 0; }
 
 .app.stack .topbar { -webkit-flex-wrap: wrap; flex-wrap: wrap; }
-.app.stack .kids { -webkit-flex: 1; flex: 1; min-width: 0; }
+.app.stack .kids { -webkit-flex: 1 1 100%; flex: 1 1 100%; min-width: 0; }
 .app.stack .kid-btn { -webkit-flex: 1; flex: 1; min-width: 0; }
 .app.stack .kid-btn .name { -webkit-flex: 1; flex: 1; min-width: 0; max-width: none; }
 .app.stack .kid-btn .avatar { -webkit-flex-shrink: 0; flex-shrink: 0; }
 .app.stack .kid-btn:last-child { margin-right: 0; }
-.app.stack .gear { -webkit-order: 1; order: 1; }
-/* Zeilenumbruch nach dem Zahnrad */
+/* Zeilenumbruch nach den Kindern */
 .app.stack .topbar:after { content: ""; -webkit-flex-basis: 100%; flex-basis: 100%; height: 0; -webkit-order: 1; order: 1; }
+.app.stack .gear { -webkit-order: 4; order: 4; margin-top: 8px; }
 .app.stack .clock { -webkit-order: 2; order: 2; margin: 8px 8px 0 0; }
 .app.stack .routine-switch { -webkit-order: 3; order: 3; -webkit-flex: 1; flex: 1; margin-top: 8px; }
 .app.stack .routine-btn { -webkit-flex: 1; flex: 1; }
@@ -970,6 +969,7 @@ body.morning .tile.done { box-shadow: 0 6px 0 #15803d, 0 0 28px rgba(163, 230, 5
   .settings-head { padding: 10px 16px; }
   .settings-head h2 { -webkit-flex: 1; flex: 1; min-width: 0; margin-right: 12px; font-size: 20px; }
   .settings-head .btn { -webkit-flex-shrink: 0; flex-shrink: 0; white-space: nowrap; }
+  .settings-section.center .btn { height: auto; min-height: 50px; padding: 8px 20px; }
   .settings-body { padding: 4px 16px 28px; }
   .settings-section { margin-top: 14px; }
   .settings-section h3 { font-size: 19px; }
@@ -984,7 +984,6 @@ body.morning .tile.done { box-shadow: 0 6px 0 #15803d, 0 0 28px rgba(163, 230, 5
   .sel-item button { width: 42px; height: 42px; font-size: 19px; margin-left: 4px; }
   .pool-item { width: 30%; width: calc((100% - 24px) / 3); height: 104px; margin: 0 8px 8px 0; font-size: 14px; }
   .pool-item .e { font-size: 34px; }
-  .app-version { bottom: calc(6px + env(safe-area-inset-bottom)); }
 
   .c-banner { font-size: 36px; }
   .celebrate-msg { font-size: 32px; }
