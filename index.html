@@ -46,6 +46,7 @@
   <!-- Erkennungszeichen des aktiven Kindes: schwebende Tierbilder + breiter Farbrahmen -->
   <div class="kid-bg" id="kidBg" aria-hidden="true"></div>
   <div class="kid-frame" id="kidFrame" aria-hidden="true"></div>
+  <div class="kid-frame-pat" id="kidFramePat" aria-hidden="true"><div class="t"></div><div class="b"></div><div class="l"></div><div class="r"></div></div>
 
   <div class="app">
     <header class="topbar">
@@ -78,7 +79,8 @@
     <main class="grid" id="grid"></main>
 
     <footer class="bottombar">
-      <button class="reset-btn" id="resetBtn">↺ Alles zurücksetzen</button>
+      <div class="kid-tag" id="kidTag"></div>
+      <button class="reset-btn" id="resetBtn">↺ <span class="long">Alles zurücksetzen</span><span class="short">Zurücksetzen</span></button>
     </footer>
   </div>
 
@@ -127,6 +129,10 @@
         <div class="settings-section">
           <h3>Farbe</h3>
           <div class="colors" id="colorPicker"></div>
+        </div>
+        <div class="settings-section">
+          <h3>Muster</h3>
+          <div class="patterns" id="patternPicker"></div>
         </div>
         <div class="settings-tabs" id="settingsTabs">
           <button class="tab" data-routine="morning">☀️ Morgenroutine</button>

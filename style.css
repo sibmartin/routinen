@@ -20,7 +20,7 @@
   --violet: #a855f7;
   --morning-bottom: #fdba74;
   --evening-bottom: #241052;
-  --fw: 14px;  /* Breite des Farbrahmens des aktiven Kindes */
+  --fw: 16px;  /* Breite des Farbrahmens des aktiven Kindes */
   --fr: 26px;  /* Innere Eckenrundung des Rahmens */
 }
 
@@ -399,8 +399,28 @@ body.evening .scene-evening { opacity: 1; }
 }
 
 .bottombar {
-  -webkit-flex-shrink: 0; flex-shrink: 0; text-align: center; padding-top: 6px;
+  -webkit-flex-shrink: 0; flex-shrink: 0; padding-top: 6px;
+  display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: space-between; justify-content: space-between;
 }
+.reset-btn { -webkit-flex-shrink: 0; flex-shrink: 0; margin-left: 10px; }
+.reset-btn .short { display: none; }
+
+/* Namensschild des aktiven Kindes (Farbe per JS, Muster per Klasse) */
+.kid-tag {
+  display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
+  min-width: 0; height: 48px; padding: 0 20px 0 5px; border-radius: 30px;
+  border: 3px solid #fff; color: #fff; font-size: 21px; white-space: nowrap;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .35);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, .25);
+}
+.kid-tag .av {
+  -webkit-flex-shrink: 0; flex-shrink: 0;
+  width: 36px; height: 36px; line-height: 36px; text-align: center; font-size: 24px;
+  border-radius: 50%; background: #fff; margin-right: 8px; text-shadow: none;
+}
+.kid-tag .nm { overflow: hidden; text-overflow: ellipsis; }
 .reset-btn {
   height: 48px; padding: 0 24px; border-radius: 30px; font-size: 19px;
   color: var(--ink-dim);
@@ -497,6 +517,13 @@ body.evening .scene-evening { opacity: 1; }
 /* Farbe des Geschwisterkindes: nicht wählbar, damit beide Kinder verschieden aussehen */
 .colors button.taken { opacity: .4; font-size: 24px; line-height: 1; }
 
+.patterns button {
+  width: 56px; height: 56px; border-radius: 16px; margin: 0 10px 8px 0;
+  border: 4px solid #160f3a; box-shadow: 0 0 0 2px var(--line);
+}
+.patterns button.active { box-shadow: 0 0 0 4px #fff; }
+.patterns button.taken { opacity: .4; font-size: 24px; line-height: 1; }
+
 .settings-tabs { margin-top: 22px; display: -webkit-flex; display: flex; }
 .tab {
   -webkit-flex: 1; flex: 1; height: 60px; font-size: 22px;
@@ -538,7 +565,8 @@ body.evening .scene-evening { opacity: 1; }
 
 /* Emoji-Schrift für alle Stellen, an denen Emojis groß stehen */
 .c-abs, .tile .icon, .spark, .kid-btn .avatar, .avatars button, .pool-item .e, .sel-item .e,
-.routine-btn .ico, .gear, .dialog-emoji, .kid-bg-item, .kid-splash .av, .colors button {
+.routine-btn .ico, .gear, .dialog-emoji, .kid-bg-item, .kid-splash .av, .colors button,
+.patterns button, .kid-tag .av {
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 
@@ -600,7 +628,7 @@ body.morning .tile.done { box-shadow: 0 6px 0 #15803d, 0 0 28px rgba(163, 230, 5
 
 /* Handy (Hochformat) und Handy quer: alles kompakter */
 @media (max-width: 600px), (max-height: 500px) {
-  :root { --fw: 9px; --fr: 30px; }
+  :root { --fw: 12px; --fr: 30px; }
   .kid-btn { height: 52px; padding: 0 14px 0 5px; margin-right: 8px; font-size: 19px; }
   .kid-btn .avatar { width: 40px; height: 40px; line-height: 40px; font-size: 26px; margin-right: 6px; }
   .clock { height: 52px; padding: 0 12px 0 5px; margin: 0 8px; }
@@ -617,7 +645,12 @@ body.morning .tile.done { box-shadow: 0 6px 0 #15803d, 0 0 28px rgba(163, 230, 5
   .tile { margin: 5px; border-radius: 20px; }
   .tile .check { top: 6px; right: 6px; }
   .bottombar { padding-top: 4px; }
-  .reset-btn { height: 40px; padding: 0 18px; font-size: 16px; }
+  .reset-btn { height: 40px; padding: 0 16px; font-size: 16px; }
+  .reset-btn .long { display: none; }
+  .reset-btn .short { display: inline; }
+  .kid-tag { height: 40px; padding: 0 14px 0 4px; font-size: 17px; }
+  .kid-tag .av { width: 30px; height: 30px; line-height: 30px; font-size: 20px; }
+  .patterns button { width: 46px; height: 46px; margin: 0 8px 6px 0; }
   .toast { font-size: 18px; padding: 10px 16px; }
   .kid-splash .av { width: 150px; height: 150px; line-height: 142px; font-size: 96px; }
   .kid-splash .nm { font-size: 40px; padding: 0 20px; }
@@ -654,6 +687,36 @@ body.morning .tile.done { box-shadow: 0 6px 0 #15803d, 0 0 28px rgba(163, 230, 5
   position: fixed; top: var(--fw); left: var(--fw); right: var(--fw); bottom: var(--fw);
   border-radius: var(--fr);
   pointer-events: none; transition: box-shadow .5s ease;
+}
+
+/* Muster auf dem Rahmen: vier Streifen über dem farbigen Rand */
+.kid-frame-pat > div { position: fixed; pointer-events: none; }
+.kid-frame-pat .t { top: 0; left: 0; right: 0; height: var(--fw); }
+.kid-frame-pat .b { bottom: 0; left: 0; right: 0; height: var(--fw); }
+.kid-frame-pat .l { top: var(--fw); bottom: var(--fw); left: 0; width: var(--fw); }
+.kid-frame-pat .r { top: var(--fw); bottom: var(--fw); right: 0; width: var(--fw); }
+
+/* Muster je Kind (helle Zeichnung über der Farbe des Kindes) */
+.pat-stripes {
+  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, .42) 0, rgba(255, 255, 255, .42) 5px, rgba(255, 255, 255, 0) 5px, rgba(255, 255, 255, 0) 12px);
+}
+.pat-dots {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, .6) 0, rgba(255, 255, 255, .6) 2.5px, rgba(255, 255, 255, 0) 3px);
+  background-size: 12px 12px; background-position: center;
+}
+.pat-checks {
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, .4) 25%, rgba(255, 255, 255, 0) 25%, rgba(255, 255, 255, 0) 75%, rgba(255, 255, 255, .4) 75%),
+    linear-gradient(45deg, rgba(255, 255, 255, .4) 25%, rgba(255, 255, 255, 0) 25%, rgba(255, 255, 255, 0) 75%, rgba(255, 255, 255, .4) 75%);
+  background-size: 14px 14px; background-position: 0 0, 7px 7px;
+}
+.pat-zigzag {
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, .42) 25%, rgba(255, 255, 255, 0) 25%),
+    linear-gradient(225deg, rgba(255, 255, 255, .42) 25%, rgba(255, 255, 255, 0) 25%),
+    linear-gradient(315deg, rgba(255, 255, 255, .42) 25%, rgba(255, 255, 255, 0) 25%),
+    linear-gradient(45deg, rgba(255, 255, 255, .42) 25%, rgba(255, 255, 255, 0) 25%);
+  background-size: 14px 14px; background-position: -7px 0, -7px 0, 0 0, 0 0;
 }
 
 /* Schwebende Tierbilder im Hintergrund */

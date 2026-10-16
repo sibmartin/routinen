@@ -27,14 +27,14 @@ Die App passt sich an iPad und iPhone an, im Hoch- wie im Querformat. Passt die 
 
 ## Bedienung
 - **Kind wählen:** oben links. Die Namen werden im ⚙️-Menü eingetragen und nur auf dem iPad gespeichert, nicht im Code.
-- **Welches Kind ist dran?** Ein breiter Rahmen in der Farbe des Kindes läuft um den ganzen Bildschirm, dazu schwebt sein Tierbild im Hintergrund. Das andere Kind ist oben grau dargestellt. Jedes Kind hat eine eigene Farbe: Die Farbe des Geschwisterkindes ist im ⚙️-Menü gesperrt.
+- **Welches Kind ist dran?** Ein breiter Rahmen in Farbe und Muster des Kindes (Streifen, Punkte, Karos oder Zickzack) läuft um den ganzen Bildschirm, unten links steht ein Namensschild („🦊 Lea ist dran“), dazu schwebt sein Tierbild im Hintergrund. Das andere Kind ist oben grau dargestellt. Farbe und Muster werden im ⚙️-Menü gewählt; was das Geschwisterkind hat, ist dort gesperrt, damit beide verschieden aussehen.
 - **Routine wählen:** ☀️ Morgen / 🌙 Abend. Der Fortschritt bleibt beim Umschalten erhalten.
 - **Kachel antippen:** Sie wird grün, ein „+1“ steigt auf und die Energie-Leiste oben füllt sich. Nochmal antippen macht es rückgängig.
 - **Alle Kacheln erledigt:** Eine zufällige Belohnungs-Animation erscheint (je 5 für morgens und abends: Pokal mit 3 Sternen, Feuerwerk, Konfetti-Party, Luftballons, Goldmedaille bzw. abends Sternschnuppen und Nordlicht). Sie bleibt stehen, bis das Kind auf **Weiter** oder irgendwo auf den Bildschirm tippt.
 - **Nur eine Belohnung pro Tag:** Pro Kind und Routine gibt es die Belohnung einmal am Tag. Wer die letzte Kachel ab- und wieder anwählt, sieht nur „Heute schon geschafft“.
 - **Neuer Tag:** Um 3 Uhr nachts werden alle Kacheln automatisch wieder geöffnet.
 - **↺ Alles zurücksetzen:** gilt nur für das aktuelle Kind und die aktuelle Routine. Vorher kommt eine **Elternfreigabe** (Rechenaufgabe wie „7 × 8“ oder „46 + 27“), jedes Mal neu. Das Zurücksetzen gibt auch die Belohnung wieder frei, z. B. wenn ein Kind beim falschen Geschwisterkind abgehakt hat.
-- **⚙️ Zahnrad:** Einstellungen für das aktuelle Kind. Dort lassen sich Name und Bild festlegen sowie Kacheln für morgens und abends hinzufügen, entfernen oder sortieren (max. 12).
+- **⚙️ Zahnrad:** Einstellungen für das aktuelle Kind. Dort lassen sich Name, Bild, Farbe und Muster festlegen sowie Kacheln für morgens und abends hinzufügen, entfernen oder sortieren (max. 12).
 
 ## Änderungen später ausrollen
 Nach Änderungen an den Dateien in `sw.js` die Versionsnummer erhöhen (`routine-app-v1` → `v2`). So lädt das iPad beim nächsten Start mit Internet die neue Version. Gespeicherte Einstellungen und Fortschritte bleiben erhalten.

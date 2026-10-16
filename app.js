@@ -11,12 +11,15 @@
   var MAX_NAME = 16;
 
   var KIDS = [
-    { id: 'kind1', defaultName: 'Kind 1', avatar: '🦊', color: '#ff8a5b' },
-    { id: 'kind2', defaultName: 'Kind 2', avatar: '🦄', color: '#a77bff' }
+    { id: 'kind1', defaultName: 'Kind 1', avatar: '🦊', color: '#ff8a5b', pattern: 'stripes' },
+    { id: 'kind2', defaultName: 'Kind 2', avatar: '🦄', color: '#a77bff', pattern: 'dots' }
   ];
 
   var AVATARS = ['🦊', '🦄', '🐱', '🐶', '🐰', '🐻', '🐼', '🦁', '🐸', '🐯', '🐨', '🐧', '🦋', '🐞', '🌸', '⭐'];
   var KID_COLORS = ['#ff8a5b', '#a77bff', '#34aadc', '#3cc45a', '#ff5e9a', '#ffb627', '#1fbfae', '#5b6ee1'];
+  // Muster für Rahmen, Namensschild und Kind-Knopf (CSS-Klassen pat-…), damit
+  // die Kinder auch bei ähnlichen Farben unterscheidbar sind
+  var KID_PATTERNS = ['stripes', 'dots', 'checks', 'zigzag'];
 
   var ROUTINES = {
     morning: { label: 'Morgen', icon: '☀️' },
@@ -371,6 +374,7 @@
       name: '',
       avatar: kid.avatar,
       color: kid.color,
+      pattern: kid.pattern,
       tiles: clone(DEFAULT_TILES),
       done: { morning: {}, evening: {} },
       rewarded: { morning: '', evening: '' } // Tag, an dem die Belohnung schon kam
@@ -397,6 +401,7 @@
         if (typeof sk.name === 'string') k.name = sk.name.slice(0, MAX_NAME);
         if (sk.avatar) k.avatar = sk.avatar;
         if (KID_COLORS.indexOf(sk.color) !== -1) k.color = sk.color;
+        if (KID_PATTERNS.indexOf(sk.pattern) !== -1) k.pattern = sk.pattern;
         ['morning', 'evening'].forEach(function (r) {
           if (sk.tiles && sk.tiles[r] && sk.tiles[r].length !== undefined) {
             k.tiles[r] = sk.tiles[r].filter(function (id) { return !!CATALOG_BY_ID[id]; }).slice(0, MAX_TILES);
@@ -553,7 +558,7 @@
       var active = kid.id === state.current.kid;
       if (active) {
         var c = state.kids[kid.id].color;
-        b.className += ' active';
+        b.className += ' active pat-' + state.kids[kid.id].pattern;
         b.style.backgroundColor = c;
         b.style.boxShadow = '0 5px 0 rgba(0,0,0,.3), 0 0 26px ' + hexToRgba(c, 0.75);
       }
@@ -591,10 +596,21 @@
   function renderKidTheme() {
     var ks = kidState();
     var key = state.current.kid + ks.avatar + ks.color;
+    var pat = ' pat-' + ks.pattern;
     var frame = $('kidFrame');
     // Außen: breiter Rahmen in der Farbe des Kindes; innen: helle Kante und Leuchten
     frame.style.boxShadow = '0 0 0 120px ' + ks.color + ', inset 0 0 0 2px rgba(255,255,255,.6)' +
       ', inset 0 0 26px ' + hexToRgba(ks.color, 0.7) + ', inset 0 0 90px ' + hexToRgba(ks.color, 0.3);
+    var sides = $('kidFramePat').children;
+    for (var i = 0; i < sides.length; i++) sides[i].className = ['t', 'b', 'l', 'r'][i] + pat;
+
+    // Namensschild unten links
+    var tag = $('kidTag');
+    tag.className = 'kid-tag' + pat;
+    tag.style.backgroundColor = ks.color;
+    tag.innerHTML = '';
+    tag.appendChild(el('span', 'av', ks.avatar));
+    tag.appendChild(el('span', 'nm', kidName() + ' ist dran'));
     if (key === lastThemeKey) return;
     var first = lastThemeKey === '';
     lastThemeKey = key;
@@ -621,7 +637,7 @@
     var box = $('kidSplash');
     var ks = kidState();
     box.innerHTML = '';
-    var av = el('div', 'av', ks.avatar);
+    var av = el('div', 'av pat-' + ks.pattern, ks.avatar);
     av.style.backgroundColor = ks.color;
     av.style.boxShadow = '0 0 0 12px ' + hexToRgba(ks.color, 0.3) + ', 0 0 80px ' + hexToRgba(ks.color, 0.9);
     box.appendChild(av);
@@ -934,6 +950,7 @@
     save();
     $('settingsTitle').textContent = '⚙️ Einstellungen für ' + kidName();
     renderKids();
+    renderKidTheme();
     fitTopbar();
   });
   $('nameInput').addEventListener('keydown', function (e) {
@@ -1004,6 +1021,24 @@
         renderKidTheme();
       });
       cp.appendChild(b);
+    });
+
+    // Muster (wie bei der Farbe ist das Muster des Geschwisterkindes gesperrt)
+    var pp = $('patternPicker');
+    pp.innerHTML = '';
+    KID_PATTERNS.forEach(function (p) {
+      var taken = other && other.pattern === p && p !== ks.pattern;
+      var b = el('button', 'pat-' + p + (p === ks.pattern ? ' active' : (taken ? ' taken' : '')), taken ? other.avatar : '');
+      b.style.backgroundColor = ks.color;
+      if (taken) { b.disabled = true; pp.appendChild(b); return; }
+      b.addEventListener('click', function () {
+        ks.pattern = p;
+        save();
+        renderSettings();
+        renderKids();
+        renderKidTheme();
+      });
+      pp.appendChild(b);
     });
 
     // Tabs
