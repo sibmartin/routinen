@@ -1,6 +1,6 @@
 /* Service Worker: lädt die App komplett aus dem Cache, damit sie offline läuft.
    Nach Änderungen an den Dateien die Versionsnummer erhöhen. */
-var CACHE = 'routine-app-v19';
+var CACHE = 'routine-app-v20';
 var FILES = [
   './',
   './index.html',

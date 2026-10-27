@@ -498,14 +498,25 @@
   function setTransform(node, t) { node.style.webkitTransform = t; node.style.transform = t; }
 
   /* Startet eine CSS-Transition zuverlässig (auch auf altem Safari). */
+  // Sammelt alle im selben Durchlauf erzeugten Partikel, damit statt eines
+  // Reflows pro Partikel (Konfetti: bis zu 90) nur einer nötig ist
+  var animQueue = [];
   function animateTo(node, styles, delay) {
-    node.getBoundingClientRect(); // Reflow erzwingen
-    setTimeout(function () {
-      for (var k in styles) {
-        if (k === 'transform') setTransform(node, styles[k]);
-        else node.style[k] = styles[k];
-      }
-    }, delay || 20);
+    if (!animQueue.length) setTimeout(flushAnims, 0);
+    animQueue.push([node, styles, delay || 20]);
+  }
+  function flushAnims() {
+    var q = animQueue;
+    animQueue = [];
+    void document.body.offsetWidth; // Reflow erzwingen (einmal für alle)
+    q.forEach(function (a) {
+      setTimeout(function () {
+        for (var k in a[1]) {
+          if (k === 'transform') setTransform(a[0], a[1][k]);
+          else a[0].style[k] = a[1][k];
+        }
+      }, a[2]);
+    });
   }
 
   /* ----------------------------- Anzeige ---------------------------- */
@@ -641,9 +652,12 @@
       outer.style.top = p.y + '%';
       outer.style.fontSize = p.s + 'px';
       outer.style.animationDelay = first ? '0s' : (i * 0.04) + 's';
-      var inner = el('div', 'kid-bg-float', ks.avatar);
-      setTransform(inner, 'rotate(' + p.r + 'deg)');
+      // Schweben per transform (ohne Layout-Neuberechnung), Drehung auf eigenem Element
+      var inner = el('div', 'kid-bg-float');
       inner.style.animationDelay = (-i * 0.7) + 's';
+      var rot = el('div', '', ks.avatar);
+      setTransform(rot, 'rotate(' + p.r + 'deg)');
+      inner.appendChild(rot);
       outer.appendChild(inner);
       bg.appendChild(outer);
     });
@@ -1370,6 +1384,7 @@
 
     closeCelebrate();
     celebrateBox.className = 'celebrate open ready ' + routine;
+    document.body.setAttribute('data-celebrating', '');
     var next = $('celebrateNext');
     next.style.animation = 'none'; void next.offsetWidth; next.style.animation = '';
     var msg = anims[idx](kidName(), progress().total);
@@ -1385,6 +1400,7 @@
     stage.innerHTML = '';
     stage.className = 'celebrate-stage';
     celebrateBox.className = 'celebrate';
+    document.body.removeAttribute('data-celebrating');
   }
 
   // Schließen nur durch Tippen – kurz gesperrt, damit ein schneller
